@@ -2,662 +2,531 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>EAS - Employee Attendance System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EAS Cloud - Status Fix</title>
     
-    <!-- External Libraries (Maps & Icons) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
-        /* --- CSS VARIABLES & RESET --- */
         :root {
-            --primary: #4f46e5;
-            --primary-light: #818cf8;
-            --secondary: #ec4899;
-            --dark: #1e293b;
-            --light: #f8fafc;
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --secondary: #64748b;
+            --bg-light: #f1f5f9;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
             --success: #10b981;
-            --warning: #f59e0b;
             --danger: #ef4444;
-            --glass: rgba(255, 255, 255, 0.75);
-            --glass-border: rgba(255, 255, 255, 0.5);
-            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
-            --sidebar-width: 280px;
+            --warning: #f59e0b;
+            --border: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
         
-        body {
-            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
-            background-attachment: fixed;
-            color: var(--dark);
-            height: 100vh;
-            overflow: hidden;
-        }
+        body { background-color: var(--bg-light); color: var(--text-main); min-height: 100vh; }
 
-        /* --- UTILITY CLASSES --- */
+        /* --- UTILS --- */
         .hidden { display: none !important; }
         .flex { display: flex; }
         .flex-col { flex-direction: column; }
         .items-center { align-items: center; }
         .justify-between { justify-content: space-between; }
-        .justify-center { justify-content: center; }
         .gap-2 { gap: 0.5rem; }
         .gap-4 { gap: 1rem; }
         .p-4 { padding: 1rem; }
-        .w-full { width: 100%; }
-        .text-center { text-align: center; }
-        .mb-2 { margin-bottom: 0.5rem; }
-        .mb-4 { margin-bottom: 1rem; }
         .text-sm { font-size: 0.875rem; }
-
-        /* --- GLASS COMPONENTS --- */
-        .glass-panel {
-            background: var(--glass);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border: 1px solid var(--glass-border);
-            border-radius: 1rem;
-            box-shadow: var(--glass-shadow);
-        }
-
+        .font-bold { font-weight: 700; }
+        .text-center { text-align: center; }
+        .w-full { width: 100%; }
+        .h-full { height: 100%; }
+        
         .btn {
-            padding: 0.75rem 1.2rem;
-            border-radius: 0.5rem;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.1s, box-shadow 0.2s;
-            color: white;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            min-height: 44px;
+            padding: 0.5rem 1rem; border: none; border-radius: 6px; cursor: pointer; 
+            font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            font-size: 0.9rem;
         }
-        .btn:active { transform: scale(0.96); }
-        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-light)); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); }
-        .btn-secondary { background: linear-gradient(135deg, var(--secondary), #f472b6); }
-        .btn-success { background: var(--success); }
-        .btn-danger { background: var(--danger); }
-        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
-        .btn-sm { padding: 0.5rem 0.8rem; font-size: 0.85rem; min-height: 36px; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-danger { background: var(--danger); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
+        .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.8rem; }
 
-        /* FIXED: Role Button Styles to prevent overlap */
-        .role-btn {
-            flex: 1; /* Uses flex space instead of width: 100% to prevent overlap */
-            padding: 0.75rem 1rem;
-            border-radius: 0.5rem;
-            border: none;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            color: white;
-            background: transparent;
-            border: 1px solid rgba(255,255,255,0.2);
+        .input-group { margin-bottom: 1rem; text-align: left; }
+        .input-group label { display: block; margin-bottom: 0.25rem; font-size: 0.85rem; color: var(--text-muted); }
+        .input-control {
+            width: 100%; padding: 0.6rem; border: 1px solid var(--border); border-radius: 6px;
+            font-size: 1rem; transition: border 0.2s;
         }
-        .role-btn.active { background: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .role-btn:not(.active):hover { background: rgba(255,255,255,0.2); }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 0.85rem;
-            border: 1px solid rgba(0,0,0,0.1);
-            border-radius: 0.5rem;
-            background: rgba(255,255,255,0.85);
-            margin-bottom: 0.8rem;
-            font-size: 1rem;
-            min-height: 44px;
-        }
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            background: white;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
-        }
-
-        /* --- CLOUD STATUS COMPONENT --- */
-        .cloud-status {
-            display: flex; align-items: center; gap: 0.5rem;
-            background: rgba(255,255,255,0.95);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            border: 1px solid rgba(255,255,255,0.5);
-            z-index: 1000;
-        }
-        .led {
-            width: 10px; height: 10px;
-            border-radius: 50%;
-            background-color: #ccc;
-            box-shadow: 0 0 5px #ccc;
-            transition: background-color 0.3s;
-        }
-        .led.connected { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
-        .led.disconnected { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
-        .led.syncing { background-color: var(--warning); animation: pulse 1s infinite; }
+        .input-control:focus { outline: none; border-color: var(--primary); }
 
         /* --- AUTH SCREEN --- */
         #auth-screen {
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            background: linear-gradient(135deg, var(--primary) 0%, #1e293b 100%);
+            padding: 1rem;
+        }
+        .auth-card {
+            background: var(--surface); padding: 2rem; border-radius: 16px; 
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1); width: 100%; max-width: 450px; 
             position: relative;
-            overflow-y: auto;
-            padding: 20px;
+        }
+        .role-switch {
+            display: flex; background: var(--bg-light); padding: 4px; border-radius: 8px; margin-bottom: 1.5rem;
+        }
+        .role-btn {
+            flex: 1; padding: 8px; text-align: center; border-radius: 6px; cursor: pointer; font-weight: 600; color: var(--text-muted);
+        }
+        .role-btn.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+        /* Version Badge Style */
+        .version-badge {
+            background: #eff6ff; color: var(--primary);
+            padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;
+            display: inline-block; margin-top: 0.5rem; border: 1px solid #dbeafe;
         }
 
-        .login-card {
-            width: 100%;
-            max-width: 400px;
-            padding: 2.5rem 2rem;
-            z-index: 10;
-            position: relative;
-            animation: slideUp 0.5s ease-out;
+        /* CLOUD SETTINGS IN LOGIN */
+        .cloud-login-panel {
+            background: #f8fafc; border: 1px dashed var(--border); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
+        }
+        .cloud-login-panel h4 { font-size: 0.9rem; margin-bottom: 0.5rem; color: var(--text-muted); display: flex; justify-content: space-between; }
+        
+        .cloud-inputs { display: none; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px; }
+        .cloud-inputs.open { display: block; animation: slideDown 0.2s ease-out; }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Bottom Status Bar (For Emp/General) */
+        .login-footer-status {
+            margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            font-size: 0.8rem; color: var(--text-muted);
         }
 
-        .app-logo { font-size: 2.5rem; font-weight: 800; background: linear-gradient(to right, #fff, #e0e7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; display: block; text-align: center; }
+        /* LED Status */
+        .led { width: 10px; height: 10px; border-radius: 50%; background: #ccc; display: inline-block; box-shadow: 0 0 2px rgba(0,0,0,0.2); }
+        .led.connected { background: var(--success); box-shadow: 0 0 5px var(--success); }
+        .led.disconnected { background: var(--danger); }
+        .led.syncing { background: var(--warning); animation: pulse 1s infinite; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
         /* --- DASHBOARD LAYOUT --- */
-        #dashboard-screen { display: flex; height: 100vh; position: relative; }
-
-        /* Sidebar */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: rgba(255,255,255,0.95);
-            backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255,255,255,0.5);
-            display: flex;
-            flex-direction: column;
-            z-index: 50;
-            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1rem; }
-        .user-avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+        #dashboard-screen { display: flex; flex-direction: column; min-height: 100vh; }
         
-        .nav-item {
-            padding: 1rem 1.5rem;
-            cursor: pointer;
-            color: var(--dark);
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            transition: background 0.2s;
-            border-left: 3px solid transparent;
+        /* Sidebar */
+        #sidebar {
+            width: 260px; background: var(--surface); border-right: 1px solid var(--border);
+            position: fixed; height: 100vh; left: 0; top: 0; z-index: 50;
+            transition: transform 0.3s ease;
         }
-        .nav-item:active { background: rgba(79, 70, 229, 0.05); }
-        .nav-item.active { background: rgba(79, 70, 229, 0.1); color: var(--primary); border-left-color: var(--primary); }
-        .nav-item i { width: 20px; text-align: center; }
+        .app-logo {
+            padding: 1.5rem; font-size: 1.25rem; font-weight: bold; color: var(--primary);
+            border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem;
+        }
+        .nav-menu { padding: 1rem; flex: 1; overflow-y: auto; }
+        .nav-item {
+            display: flex; align-items: center; padding: 0.75rem 1rem; color: var(--text-muted);
+            text-decoration: none; border-radius: 8px; margin-bottom: 0.25rem; cursor: pointer;
+        }
+        .nav-item:hover { background: var(--bg-light); color: var(--text-main); }
+        .nav-item.active { background: #eff6ff; color: var(--primary); font-weight: 600; }
+        .nav-item i { width: 24px; }
 
         /* Main Content */
-        .main-content { 
-            flex: 1; 
-            overflow-y: auto; 
-            padding: 2rem; 
-            position: relative; 
-            scroll-behavior: smooth;
-            padding-top: 80px;
+        #main-content { margin-left: 260px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; width: calc(100% - 260px); }
+        
+        /* Header */
+        header {
+            height: 64px; background: var(--surface); border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; padding: 0 1.5rem;
+            position: sticky; top: 0; z-index: 40;
         }
+        .cloud-status { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); }
+        
+        /* Views */
+        .view-container { padding: 1.5rem; overflow-y: auto; flex: 1; }
+        .card { background: var(--surface); border-radius: 10px; padding: 1.5rem; border: 1px solid var(--border); box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+        .card h3 { margin-bottom: 1rem; color: var(--text-main); display: flex; justify-content: space-between; align-items: center; }
 
-        .section-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-
-        /* Grid System */
-        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-        .stat-card { padding: 1.5rem; color: white; border: none; background: rgba(255,255,255,0.2); }
-        .stat-val { font-size: 2.5rem; font-weight: 800; }
-        .stat-label { font-size: 0.9rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
-
-        /* Tables - Mobile Scrollable */
-        .table-container { 
-            overflow-x: auto; 
-            border-radius: 0.5rem; 
-            background: rgba(255,255,255,0.9); 
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-            -webkit-overflow-scrolling: touch;
-            white-space: nowrap;
-        }
-        table { width: 100%; border-collapse: collapse; min-width: 600px; }
-        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.05); }
-        th { background: #f1f5f9; color: var(--secondary); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; }
-        tr:last-child td { border-bottom: none; }
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+        th, td { text-align: left; padding: 0.75rem; border-bottom: 1px solid var(--border); }
+        th { color: var(--text-muted); font-weight: 600; }
+        .user-avatar { border-radius: 50%; object-fit: cover; }
+        .badge { padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
 
         /* Map */
-        #map-container { height: 300px; width: 100%; border-radius: 0.5rem; margin-top: 1rem; z-index: 1; }
+        #map-container { height: 400px; width: 100%; border-radius: 8px; z-index: 1; }
+
+        /* Toast */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 9999; display: flex; flex-direction: column; pointer-events: none; }
+        #toast-container > div { pointer-events: all; }
 
         /* Modals */
-        .modal-overlay {
+        .modal {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
-            display: flex; align-items: center; justify-content: center; z-index: 100;
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
+            z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s;
         }
-        .modal { 
-            background: white; padding: 2rem; border-radius: 1rem; 
-            width: 90%; max-width: 500px; 
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
-            animation: zoomIn 0.3s; 
-            max-height: 90vh;
-            overflow-y: auto;
-        }
+        .modal.open { opacity: 1; pointer-events: all; }
+        .modal-content { background: var(--surface); padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; max-height: 90vh; overflow-y: auto; }
 
-        /* Backdrop for Mobile Menu */
-        .sidebar-backdrop {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 40;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .sidebar-backdrop.open { display: block; opacity: 1; }
-
-        /* --- RESPONSIVE MOBILE STYLES --- */
+        /* Mobile Responsive */
         @media (max-width: 768px) {
-            body { height: auto; min-height: 100vh; }
-            .sidebar {
-                position: fixed;
-                top: 0; left: 0;
-                height: 100vh;
-                transform: translateX(-100%);
-                box-shadow: 5px 0 15px rgba(0,0,0,0.1);
-                width: 80%;
-                max-width: 300px;
-            }
-            .sidebar.open { transform: translateX(0); }
-            .sidebar-backdrop.open { display: block; }
-
-            .main-content { padding: 1rem; padding-top: 70px; }
-            .section-title { font-size: 1.4rem; margin-top: 1rem; }
-            .grid-3 { grid-template-columns: 1fr; }
-            .stat-val { font-size: 2rem; }
-
-            /* Mobile Header */
-            .mobile-header {
-                position: fixed; top: 0; left: 0; width: 100%; height: 60px;
-                background: rgba(255,255,255,0.95);
-                backdrop-filter: blur(10px);
-                z-index: 30;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 0 1rem;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            }
-            .mobile-header .cloud-status { margin-bottom: 0; }
+            #sidebar { transform: translateX(-100%); }
+            #sidebar.open { transform: translateX(0); }
+            #main-content { margin-left: 0; width: 100%; }
+            .mobile-only { display: block; }
+            .desktop-only { display: none; }
         }
-
-        @media (min-width: 769px) {
-            .mobile-header { display: none; }
-            .sidebar-backdrop { display: none !important; }
-        }
-
-        /* Animations */
-        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
 
-    <!-- TOAST CONTAINER -->
-    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:200; display:flex; flex-direction:column; gap:10px;"></div>
+    <!-- Toast Notifications -->
+    <div id="toast-container"></div>
 
     <!-- AUTH SCREEN -->
-    <section id="auth-screen">
-        <div class="login-card glass-panel">
-            <!-- Cloud Status (Login) -->
-            <div class="flex justify-center mb-2">
-                <div class="cloud-status">
-                    <div id="cloud-led" class="led"></div>
-                    <span id="cloud-text">Initializing...</span>
+    <div id="auth-screen">
+        <div class="auth-card">
+            <div class="text-center mb-4">
+                <i class="fa-solid fa-cloud fa-3x" style="color:var(--primary); margin-bottom:1rem;"></i>
+                <h2>EAS Cloud</h2>
+                <span id="version-display" class="version-badge">v2.11.0</span>
+            </div>
+            
+            <form id="login-form" onsubmit="handleLogin(event)">
+                <div class="role-switch">
+                    <div id="btn-role-emp" class="role-btn active" onclick="selectRole('EMP')">Employee</div>
+                    <div id="btn-role-admin" class="role-btn" onclick="selectRole('ADMIN')">Admin</div>
                 </div>
-            </div>
 
-            <div class="text-center">
-                <i class="fas fa-fingerprint fa-3x" style="color:var(--primary-light); margin-bottom:1rem;"></i>
-                <span class="app-logo">EAS</span>
-                <p style="color:#555; margin-bottom:2rem;">Employee Attendance System</p>
-            </div>
+                <!-- CLOUD SETTINGS (Admin Only) -->
+                <div id="admin-cloud-settings" class="cloud-login-panel hidden">
+                    <h4>
+                        <span><i class="fa-solid fa-server"></i> Cloud Connection</span>
+                        <button type="button" class="btn btn-outline btn-sm" onclick="toggleCloudEdit()">Edit Keys</button>
+                    </h4>
+                    
+                    <div style="font-size: 0.75rem; display: flex; align-items: center; gap: 6px; margin-top: 5px;">
+                        <span id="admin-led-login" class="led disconnected"></span>
+                        <span id="admin-text-login">Initializing...</span>
+                    </div>
 
-            <!-- FIX: Role Buttons -->
-            <div class="flex gap-2 mb-4">
-                <button type="button" id="btn-role-emp" class="role-btn active" onclick="selectRole('EMP')">EMP</button>
-                <button type="button" id="btn-role-admin" class="role-btn" onclick="selectRole('ADMIN')">ADMIN</button>
-            </div>
+                    <!-- Manual Key Update Section -->
+                    <div id="cloud-edit-area" class="cloud-inputs">
+                        <div class="input-group" style="margin-bottom: 0.5rem;">
+                            <label class="text-xs">Bin ID</label>
+                            <input type="text" id="edit-bin-id" class="input-control" style="padding: 6px; font-size: 0.8rem;">
+                        </div>
+                        <div class="input-group" style="margin-bottom: 0;">
+                            <label class="text-xs"> Master Key</label>
+                            <input type="text" id="edit-master-key" class="input-control" style="padding: 6px; font-size: 0.8rem; letter-spacing: -0.5px;">
+                        </div>
+                        <button type="button" class="btn btn-primary btn-sm w-full mt-2" onclick="saveNewCloudKeys()">Save & Sync</button>
+                    </div>
+                </div>
 
-            <form onsubmit="handleLogin(event)">
-                <label class="text-sm font-bold">Username</label>
-                <input type="text" id="login-user" placeholder="e.g. Admin or EMP" required>
-                
-                <label class="text-sm font-bold">Password</label>
-                <input type="password" id="login-pass" placeholder="******" required>
-                
-                <button type="submit" id="btn-login-submit" class="btn btn-primary w-full" style="padding: 0.8rem;">Secure Login <i class="fas fa-arrow-right"></i></button>
+                <div class="input-group">
+                    <label>User ID or Email</label>
+                    <input type="text" id="login-user" name="username" class="input-control" placeholder="admin or emp" required>
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-pass" name="password" class="input-control" placeholder="1234" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-full">Secure Login</button>
             </form>
-            
-            <div class="text-center mt-4 text-sm" style="color:#666;">
-                <p><strong>Demo:</strong> <b>Admin</b> / <b>1234</b></p>
-                <p><strong>Demo:</strong> <b>EMP</b> / <b>1234</b></p>
-                <div style="border-top:1px solid rgba(0,0,0,0.1); margin-top:10px; padding-top:5px; opacity:0.7;">
-                    Software Version: <span id="version-display" style="font-weight:bold; color:var(--primary);">v2.5.0</span>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- DASHBOARD SCREEN -->
-    <section id="dashboard-screen" class="hidden">
-        
-        <!-- MOBILE HEADER (Only visible on mobile) -->
-        <div class="mobile-header">
-            <div class="flex items-center gap-2">
-                <button class="btn btn-outline btn-sm" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
-                <span class="font-bold" style="color:var(--dark);">EAS Dashboard</span>
-            </div>
-            <div class="cloud-status">
-                <div class="led" id="mobile-led"></div>
-            </div>
-        </div>
-
-        <!-- BACKDROP (Mobile only) -->
-        <div id="backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
-
-        <!-- SIDEBAR -->
-        <nav class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <img src="" id="nav-avatar" class="user-avatar" alt="Profile">
-                <div>
-                    <div class="font-bold" id="nav-username">User</div>
-                    <div class="text-sm" style="color:#666" id="nav-role">Role</div>
-                </div>
-            </div>
-            
-            <div class="flex-col" style="flex:1; overflow-y:auto; padding-top:1rem;">
-                <!-- Employee Menu -->
-                <div id="menu-emp" class="hidden">
-                    <div class="nav-item active" onclick="navTo('emp-att')"><i class="fas fa-map-marker-alt"></i> Attendance</div>
-                    <div class="nav-item" onclick="navTo('emp-leave')"><i class="fas fa-calendar-minus"></i> Leaves</div>
-                    <div class="nav-item" onclick="navTo('emp-adv')"><i class="fas fa-hand-holding-dollar"></i> Advance</div>
-                    <div class="nav-item" onclick="navTo('emp-set')"><i class="fas fa-cog"></i> Settings</div>
-                </div>
-                <!-- Admin Menu -->
-                <div id="menu-admin" class="hidden">
-                    <div class="nav-item active" onclick="navTo('adm-dash')"><i class="fas fa-chart-pie"></i> Dashboard</div>
-                    <div class="nav-item" onclick="navTo('adm-team')"><i class="fas fa-users"></i> Team Mgmt</div>
-                    <div class="nav-item" onclick="navTo('adm-comp')"><i class="fas fa-building"></i> Companies</div>
-                    <div class="nav-item" onclick="navTo('adm-att')"><i class="fas fa-clipboard-list"></i> Attendance</div>
-                    <div class="nav-item" onclick="navTo('adm-leave')"><i class="fas fa-user-check"></i> Leave Approvals</div>
-                    <div class="nav-item" onclick="navTo('adm-msg')"><i class="fab fa-whatsapp"></i> Messaging</div>
-                    <div class="nav-item" onclick="navTo('adm-cloud')"><i class="fas fa-cloud"></i> Cloud Config</div>
-                </div>
-            </div>
-
-            <div class="p-4">
-                <button class="btn btn-danger w-full" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
-            </div>
-        </nav>
-
-        <!-- MAIN CONTENT -->
-        <main class="main-content">
-            
-            <!-- EMPLOYEES VIEWS -->
-            <div id="emp-att" class="view-section">
-                <h2 class="section-title">Daily Attendance</h2>
-                <div class="glass-panel p-4" style="margin-bottom:2rem; text-align:center;">
-                    <div id="clock" style="font-size:2.5rem; font-weight:300; margin-bottom:1rem;">00:00:00</div>
-                    <div id="att-status" class="badge badge-success mb-2" style="font-size:1.2rem; font-weight:bold; color:white;">Not Checked In</div>
-                    
-                    <div class="flex flex-col gap-4 items-center justify-center w-full">
-                        <button class="btn btn-primary" style="width:100%; max-width:300px; font-size:1.1rem;" onclick="doCheckIn()"><i class="fas fa-sign-in-alt"></i> CHECK IN</button>
-                        <button class="btn btn-danger hidden" id="btn-emp-checkout" style="width:100%; max-width:300px; font-size:1.1rem;" onclick="doCheckOut()"><i class="fas fa-sign-out-alt"></i> CHECK OUT</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="emp-leave" class="view-section hidden">
-                <h2 class="section-title">Leave Requests</h2>
-                <div class="glass-panel p-4">
-                    <div class="flex flex-col gap-2 mb-4">
-                        <label style="font-weight:bold">From Date</label>
-                        <input type="date" id="leave-from">
-                        <label style="font-weight:bold">To Date</label>
-                        <input type="date" id="leave-to">
-                    </div>
-                    <label>Reason</label>
-                    <textarea id="leave-reason" rows="3"></textarea>
-                    <button class="btn btn-primary" onclick="applyLeave()">Submit Request</button>
-                </div>
-                <h3 class="mt-4 mb-2" style="color:white;">History</h3>
-                <div class="table-container">
-                    <table id="emp-leave-history">
-                        <thead><tr><th>Dates</th><th>Reason</th><th>Status</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="emp-adv" class="view-section hidden">
-                <h2 class="section-title">Advance Request</h2>
-                <div class="glass-panel p-4">
-                    <label>Type</label>
-                    <select id="adv-type">
-                        <option>Salary Advance</option>
-                        <option>Travel Reimbursement</option>
-                        <option>Medical Emergency</option>
-                    </select>
-                    <label>Amount</label>
-                    <input type="number" id="adv-amount" placeholder="₹">
-                    <label>Description</label>
-                    <textarea id="adv-desc" rows="3"></textarea>
-                    <button class="btn btn-primary" onclick="sendAdvanceRequest()">Send via Email</button>
-                </div>
-            </div>
-
-            <div id="emp-set" class="view-section hidden">
-                <h2 class="section-title">Settings</h2>
-                <div class="glass-panel p-4">
-                    <label>Profile Name</label>
-                    <input type="text" id="set-name">
-                    <label>New Password</label>
-                    <input type="password" id="set-pass">
-                    <div class="flex flex-col gap-2 mb-4 mt-4">
-                        <button class="btn btn-secondary" onclick="requestPerms()"><i class="fas fa-location-arrow"></i> Request GPS</button>
-                        <button class="btn btn-secondary" onclick="requestNotif()"><i class="fas fa-bell"></i> Request Notifs</button>
-                    </div>
-                    <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
-                </div>
-            </div>
-
-            <!-- ADMIN VIEWS -->
-            <div id="adm-dash" class="view-section hidden">
-                <h2 class="section-title">Admin Dashboard</h2>
-                <div class="grid-3">
-                    <div class="glass-panel stat-card">
-                        <div class="stat-val" id="dash-total-emp">0</div>
-                        <div class="stat-label">Employees</div>
-                    </div>
-                    <div class="glass-panel stat-card">
-                        <div class="stat-val" id="dash-present">0</div>
-                        <div class="stat-label">Present Today</div>
-                    </div>
-                    <div class="glass-panel stat-card">
-                        <div class="stat-val" id="dash-leaves">0</div>
-                        <div class="stat-label">Pending Leaves</div>
-                    </div>
-                </div>
-                <div class="glass-panel p-4">
-                    <h3>Live Map</h3>
-                    <div id="map-container"></div>
-                </div>
-            </div>
-
-            <div id="adm-team" class="view-section hidden">
-                <h2 class="section-title">Team Management</h2>
-                <button class="btn btn-primary mb-4" onclick="openModal('modal-add-emp')"><i class="fas fa-plus"></i> Add Employee</button>
-                <div class="table-container">
-                    <table id="team-table">
-                        <thead><tr><th>Photo</th><th>Name</th><th>Company</th><th>Role</th><th>Action</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="adm-comp" class="view-section hidden">
-                <h2 class="section-title">Company Management</h2>
-                <div class="glass-panel p-4 mb-4">
-                    <div class="flex flex-col gap-2">
-                        <input type="text" id="comp-name" placeholder="Company Name">
-                        <input type="email" id="comp-email" placeholder="Finance Email (for Advances)">
-                    </div>
-                    <button class="btn btn-primary" onclick="addCompany()"><i class="fas fa-plus"></i> Add</button>
-                </div>
-                <div class="table-container">
-                    <table id="comp-table">
-                        <thead><tr><th>Company</th><th>Finance Email</th><th>Action</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="adm-att" class="view-section hidden">
-                <h2 class="section-title">Attendance Reports</h2>
-                <div class="glass-panel p-4 mb-4">
-                    <div class="flex gap-2">
-                        <input type="date" id="rep-date" style="margin:0;">
-                        <button class="btn btn-primary" onclick="loadReport()">View</button>
-                    </div>
-                </div>
-                <div class="table-container">
-                    <table id="att-report">
-                        <thead><tr><th>Employee</th><th>Check-In</th><th>Check-Out</th><th>Loc</th><th>Status</th><th>Action</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="adm-leave" class="view-section hidden">
-                <h2 class="section-title">Leave Approvals</h2>
-                <div class="table-container">
-                    <table id="leave-approve-table">
-                        <thead><tr><th>Employee</th><th>Dates</th><th>Reason</th><th>Action</th></tr></thead>
-                        <tbody></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="adm-msg" class="view-section hidden">
-                <h2 class="section-title">Messaging & Meetings</h2>
-                <div class="glass-panel p-4">
-                    <div class="flex flex-col gap-2 mb-4">
-                        <label>Target</label>
-                        <select id="msg-target">
-                            <option value="all">All Employees</option>
-                            <option value="selected">Selected Group</option>
-                            <option value="individual">Individual (Enter Mobile)</option>
-                        </select>
-                    </div>
-                    
-                    <div id="group-select-container" class="mb-4 hidden">
-                        <label>Filter by Company</label>
-                        <select id="msg-company"></select>
-                    </div>
-
-                    <div id="individual-input" class="mb-4 hidden">
-                        <label>Mobile Number</label>
-                        <input type="text" id="msg-mobile" placeholder="e.g. 919876543210">
-                    </div>
-
-                    <label>Message Content</label>
-                    <textarea id="msg-content" rows="4"></textarea>
-                    
-                    <div class="flex flex-col gap-2 mt-4">
-                        <button class="btn btn-success" onclick="sendWhatsApp('ATTENDANCE')"><i class="fab fa-whatsapp"></i> Attendance Reminder</button>
-                        <button class="btn btn-secondary" onclick="sendWhatsApp('MEETING')"><i class="fas fa-video"></i> Schedule Meeting</button>
-                        <button class="btn btn-primary" onclick="sendWhatsApp('IMPORTANT')"><i class="fas fa-exclamation-circle"></i> Important Msg</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="adm-cloud" class="view-section hidden">
-                <h2 class="section-title">Cloud Configuration</h2>
-                <div class="glass-panel p-4">
-                    <label>JSONBin Bin ID</label>
-                    <input type="text" id="cloud-bin" placeholder="65b3f...">
-                    <label>Master Key</label>
-                    <input type="password" id="cloud-key" placeholder="$2a$10$...">
-                    <button class="btn btn-primary mb-4" onclick="saveCloudConfig()">Connect & Sync</button>
-                    <div class="mt-4">
-                        <label>App Update (Hosted Online)</label>
-                        <button class="btn btn-outline w-full" onclick="triggerAppUpdate()"><i class="fas fa-download"></i> Check & Push Update</button>
-                    </div>
-                </div>
-            </div>
-
-        </main>
-    </section>
-
-    <!-- MODAL: ADD EMPLOYEE -->
-    <div id="modal-add-emp" class="modal-overlay hidden">
-        <div class="modal">
-            <h3 class="mb-4">Add Employee</h3>
-            <input type="text" id="new-emp-id" placeholder="Employee ID (e.g. E003)">
-            <input type="text" id="new-emp-name" placeholder="Full Name">
-            <select id="new-emp-comp"></select>
-            <input type="text" id="new-emp-mobile" placeholder="Mobile (with country code)">
-            <input type="email" id="new-emp-email" placeholder="Email">
-            <input type="password" id="new-emp-pass" placeholder="Default Password">
-            <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="addEmployee()">Save</button>
-                <button class="btn btn-danger w-full" onclick="closeModal('modal-add-emp')">Cancel</button>
+            <!-- GENERAL STATUS BAR (Visible for everyone) -->
+            <div id="login-footer-status" class="login-footer-status">
+                <span id="general-led-login" class="led disconnected"></span>
+                <span id="general-text-login">Checking connection...</span>
             </div>
         </div>
     </div>
 
-    <!-- SCRIPTS -->
+    <!-- DASHBOARD SCREEN -->
+    <div id="dashboard-screen" class="hidden">
+        
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="app-logo">
+                <i class="fa-solid fa-layer-group"></i> EAS Portal
+            </div>
+            
+            <div class="p-4 text-center border-b" style="border-color:var(--border);">
+                <img id="nav-avatar" src="" class="user-avatar" style="width:64px; height:64px; margin-bottom:0.5rem;">
+                <h4 id="nav-username" class="font-bold">User</h4>
+                <span id="nav-role" class="badge badge-secondary">ROLE</span>
+            </div>
+
+            <!-- Admin Menu -->
+            <div id="menu-admin" class="nav-menu hidden">
+                <div class="nav-item active" onclick="navTo('adm-dash')"><i class="fa-solid fa-chart-pie"></i> Dashboard</div>
+                <div class="nav-item" id="adm-team" onclick="navTo('adm-team')"><i class="fa-solid fa-users"></i> Team</div>
+                <div class="nav-item" id="adm-att" onclick="navTo('adm-att')"><i class="fa-solid fa-calendar-check"></i> Attendance</div>
+                <div class="nav-item" id="adm-leave" onclick="navTo('adm-leave')"><i class="fa-solid fa-plane-departure"></i> Leaves</div>
+                <div class="nav-item" id="adm-comp" onclick="navTo('adm-comp')"><i class="fa-solid fa-building"></i> Companies</div>
+            </div>
+
+            <!-- Employee Menu -->
+            <div id="menu-emp" class="nav-menu hidden">
+                <div class="nav-item active" onclick="navTo('emp-att')"><i class="fa-solid fa-location-dot"></i> Attendance</div>
+                <div class="nav-item" id="emp-leave" onclick="navTo('emp-leave')"><i class="fa-solid fa-calendar-plus"></i> My Leaves</div>
+                <div class="nav-item" onclick="navTo('emp-adv')"><i class="fa-solid fa-hand-holding-dollar"></i> Advance</div>
+                <div class="nav-item" onclick="navTo('emp-settings')"><i class="fa-solid fa-gear"></i> Settings</div>
+            </div>
+
+            <div class="p-4 border-t" style="border-color:var(--border)">
+                <button onclick="logout()" class="btn btn-outline w-full text-danger"><i class="fa-solid fa-right-from-bracket"></i> Logout</button>
+            </div>
+        </nav>
+
+        <!-- Backdrop for mobile -->
+        <div id="backdrop" onclick="toggleSidebar(false)" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:40;"></div>
+
+        <!-- Main Content -->
+        <main id="main-content">
+            <header>
+                <div class="flex items-center gap-4">
+                    <i class="fa-solid fa-bars mobile-only" style="font-size:1.2rem; cursor:pointer;" onclick="toggleSidebar()"></i>
+                    <h3 class="desktop-only">Enterprise Access System</h3>
+                </div>
+                <div class="cloud-status">
+                    <div class="desktop-only text-right mr-2">
+                        <div id="cloud-text">Initializing...</div>
+                        <div id="desk-text" class="text-sm text-muted">Cloud Service</div>
+                    </div>
+                    <div id="cloud-led" class="led disconnected"></div>
+                </div>
+            </header>
+
+            <div class="view-container">
+                
+                <!-- === ADMIN VIEWS === -->
+                
+                <!-- Dashboard -->
+                <div id="adm-dash" class="view-section">
+                    <div class="flex gap-4" style="flex-wrap: wrap;">
+                        <div class="card" style="flex:1;">
+                            <h3>Total Employees</h3>
+                            <p class="font-bold" style="font-size:2rem;" id="dash-total-emp">0</p>
+                        </div>
+                        <div class="card" style="flex:1;">
+                            <h3>Present Today</h3>
+                            <p class="font-bold" style="font-size:2rem; color:var(--success);" id="dash-present">0</p>
+                        </div>
+                        <div class="card" style="flex:1;">
+                            <h3>Pending Leaves</h3>
+                            <p class="font-bold" style="font-size:2rem; color:var(--warning);" id="dash-leaves">0</p>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>Live Attendance Map</h3>
+                        <div id="map-container"></div>
+                    </div>
+                </div>
+
+                <!-- Team -->
+                <div id="adm-team" class="view-section hidden">
+                    <div class="card">
+                        <h3>Employees <button class="btn btn-primary btn-sm" onclick="openModal('modal-add-emp')">+ Add New</button></h3>
+                        <div style="overflow-x:auto;">
+                            <table>
+                                <thead><tr><th>Avatar</th><th>Name</th><th>Company</th><th>Role</th><th>Action</th></tr></thead>
+                                <tbody id="team-table"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Attendance Report -->
+                <div id="adm-att" class="view-section hidden">
+                    <div class="card">
+                        <h3>Daily Report</h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="date" id="rep-date" class="input-control">
+                            <button class="btn btn-primary" onclick="loadReport()">Load</button>
+                            <button class="btn btn-outline" onclick="sendWhatsApp('ATTENDANCE')">Broadcast</button>
+                        </div>
+                        <table>
+                            <thead><tr><th>Name</th><th>Check In</th><th>Check Out</th><th>Loc</th><th>Status</th><th>Action</th></tr></thead>
+                            <tbody id="att-report"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Leaves -->
+                <div id="adm-leave" class="view-section hidden">
+                    <div class="card">
+                        <h3>Leave Requests</h3>
+                        <table>
+                            <thead><tr><th>Employee</th><th>Dates</th><th>Reason</th><th>Action</th></tr></thead>
+                            <tbody id="leave-approve-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Companies -->
+                <div id="adm-comp" class="view-section hidden">
+                    <div class="card">
+                        <h3>Companies <button class="btn btn-danger btn-sm" onclick="delComp(null)">Purge All</button></h3>
+                        <div class="flex gap-2 mb-4">
+                            <input type="text" id="comp-name" placeholder="Name" class="input-control">
+                            <input type="email" id="comp-email" placeholder="Email" class="input-control">
+                            <button class="btn btn-success" onclick="addCompany()">Add</button>
+                        </div>
+                        <table>
+                            <thead><tr><th>Name</th><th>Email</th><th>Action</th></tr></thead>
+                            <tbody id="comp-table"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- === EMPLOYEE VIEWS === -->
+
+                <!-- Emp Att -->
+                <div id="emp-att" class="view-section hidden">
+                    <div class="card text-center" style="padding: 3rem 1rem;">
+                        <div id="clock" class="font-bold" style="font-size: 3rem; margin-bottom: 1rem;">00:00:00</div>
+                        <div id="att-status" class="badge badge-warning mb-2" style="font-size: 1.2rem; padding: 0.5rem 1rem;">Not Checked In</div>
+                        
+                        <div class="flex gap-4 justify-center mt-4">
+                            <button id="btn-emp-checkin" class="btn btn-success btn-lg" onclick="doCheckIn()">
+                                <i class="fa-solid fa-fingerprint"></i> Check In
+                            </button>
+                            <button id="btn-emp-checkout" class="btn btn-secondary btn-lg hidden" onclick="doCheckOut()">
+                                <i class="fa-solid fa-person-walking-arrow-right"></i> Check Out
+                            </button>
+                        </div>
+                        <p class="text-sm text-muted mt-4">Location required for Check-In</p>
+                    </div>
+                </div>
+
+                <!-- Emp Leaves -->
+                <div id="emp-leave" class="view-section hidden">
+                    <div class="card">
+                        <h3>Apply for Leave</h3>
+                        <div class="flex flex-col gap-2">
+                            <input type="date" id="leave-from" class="input-control">
+                            <input type="date" id="leave-to" class="input-control">
+                            <input type="text" id="leave-reason" class="input-control" placeholder="Reason">
+                            <button class="btn btn-primary" onclick="applyLeave()">Submit Request</button>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>History</h3>
+                        <table>
+                            <thead><tr><th>Dates</th><th>Reason</th><th>Status</th></tr></thead>
+                            <tbody id="emp-leave-history"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Emp Advance -->
+                <div id="emp-adv" class="view-section hidden">
+                    <div class="card">
+                        <h3>Request Advance / Payroll Query</h3>
+                        <div class="flex flex-col gap-2">
+                            <select id="adv-type" class="input-control">
+                                <option>Salary Advance</option>
+                                <option>Reimbursement</option>
+                                <option>Document Request</option>
+                            </select>
+                            <input type="number" id="adv-amount" class="input-control" placeholder="Amount (if applicable)">
+                            <textarea id="adv-desc" class="input-control" rows="3" placeholder="Description"></textarea>
+                            <button class="btn btn-primary" onclick="sendAdvanceRequest()">Send via Email</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emp Settings -->
+                <div id="emp-settings" class="view-section hidden">
+                    <div class="card">
+                        <h3>Profile Settings</h3>
+                        <div class="input-group">
+                            <label>Display Name</label>
+                            <input type="text" id="set-name" class="input-control">
+                        </div>
+                        <div class="input-group">
+                            <label>New Password</label>
+                            <input type="password" id="set-pass" class="input-control" placeholder="Leave blank to keep current">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveSettings()">Update Profile</button>
+                    </div>
+                    <div class="card">
+                        <h3>App Permissions</h3>
+                        <div class="flex gap-2">
+                            <button class="btn btn-outline" onclick="requestPerms()"><i class="fa-solid fa-location-crosshairs"></i> GPS</button>
+                            <button class="btn btn-outline" onclick="requestNotif()"><i class="fa-solid fa-bell"></i> Notify</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- === MODALS === -->
+
+    <!-- Add Employee Modal -->
+    <div id="modal-add-emp" class="modal">
+        <div class="modal-content">
+            <h3>Add New Employee</h3>
+            <div class="flex flex-col gap-2">
+                <input type="text" id="new-emp-id" class="input-control" placeholder="Unique ID (e.g. EMP102)">
+                <input type="text" id="new-emp-name" class="input-control" placeholder="Full Name">
+                <select id="new-emp-comp" class="input-control"></select>
+                <input type="tel" id="new-emp-mobile" class="input-control" placeholder="Mobile (with country code)">
+                <input type="email" id="new-emp-email" class="input-control" placeholder="Email">
+                <input type="text" id="new-emp-pass" class="input-control" placeholder="Password (Default: 1234)">
+                <div class="flex gap-2 mt-2">
+                    <button class="btn btn-primary w-full" onclick="addEmployee()">Create</button>
+                    <button class="btn btn-outline w-full" onclick="closeModal('modal-add-emp')">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Application Logic -->
     <script>
-        /* --- CONFIG --- */
-        const APP_VERSION = "v2.5.0";
+        /* --- CONFIG & CREDENTIALS --- */
+        const APP_VERSION = "v2.11.0-LOGIN-STATUS";
+        
+        // HARDCODED CREDENTIALS
+        let CLOUD_CONFIG = {
+            binId: "6989e18c43b1c97be971bb47", 
+            masterKey: "$2a$10$31RRwjp5GFNYo/puv4Q/wOln3poLiM/SM3lXde69LjAIKizHfzYSe"
+        };
 
         /* --- DATA STORE & INIT --- */
         const Store = {
             get: (key) => {
-                try { return JSON.parse(localStorage.getItem('eas_' + key)) || []; } 
+                try { return JSON.parse(localStorage.getItem('eas_' + key)); } 
                 catch(e) { console.error("Store Read Error", e); return []; }
             },
             set: (key, data) => localStorage.setItem('eas_' + key, JSON.stringify(data)),
             
             init: function() {
                 let users = this.get('users');
-                
-                // FIX: Force recreate Admin if missing
-                let adminUser = users.find(u => u.id.toLowerCase() === 'admin');
-                if (!adminUser) {
-                    users = users.filter(u => u.id.toLowerCase() !== 'admin'); 
-                    users.push({ 
-                        id: 'Admin', name: 'Administrator', role: 'ADMIN', pass: '1234', 
-                        company: '', mobile: '', email: '', photo: 'https://i.pravatar.cc/150?u=admin' 
-                    });
+                if (!users || users.length === 0) {
+                    const defaultUsers = [
+                        { id: 'Admin', name: 'Administrator', role: 'ADMIN', pass: '1234', company: '', mobile: '', email: '', photo: 'https://i.pravatar.cc/150?u=admin' },
+                        { id: 'EMP', name: 'John Doe', role: 'EMP', pass: '1234', company: 'TechSolutions', mobile: '919876543210', email: 'john@tech.com', photo: 'https://i.pravatar.cc/150?u=john' }
+                    ];
+                    this.set('users', defaultUsers);
+                    users = defaultUsers;
                 }
-
-                // FIX: Force recreate EMP if missing
-                let empUser = users.find(u => u.id.toLowerCase() === 'emp');
-                if (!empUser) {
-                    users = users.filter(u => u.id.toLowerCase() !== 'emp'); 
-                    users.push({ 
-                        id: 'EMP', name: 'John Doe', role: 'EMP', pass: '1234', 
-                        company: 'TechSolutions', mobile: '919876543210', email: 'john@tech.com', 
-                        photo: 'https://i.pravatar.cc/150?u=john' 
-                    });
-                }
-                
-                this.set('users', users);
-
                 if(!localStorage.getItem('eas_companies')) {
                     this.set('companies', [
                         { id: 1, name: 'TechSolutions', email: 'finance@techsolutions.com' },
@@ -666,16 +535,15 @@
                 }
                 
                 if($('version-display')) $('version-display').innerText = APP_VERSION;
+                this.sync();
             }
         };
-        Store.init();
 
+        Store.init();
         let currentUser = null;
         let currentRole = 'EMP';
         let map = null;
         let markers = [];
-        
-        // FIX: Default app to online state so login is possible immediately
         let appIsOnline = true; 
 
         /* --- UTILITIES --- */
@@ -688,27 +556,33 @@
             setTimeout(() => t.remove(), 3000);
         };
 
-        /* --- CLOUD STATUS (ALL SCREENS) --- */
+        /* --- CLOUD SYNC LOGIC --- */
         function updateCloudStatus() {
+            // Dashboard Header LEDs
             const led = $('cloud-led');
             const txt = $('cloud-text');
-            const dLed = $('desk-led');
-            const dTxt = $('desk-text');
-            const mLed = $('mobile-led');
-            
-            // Set Syncing State
+
+            // Login Screen LEDs (Admin Panel)
+            const adminLed = $('admin-led-login');
+            const adminTxt = $('admin-text-login');
+
+            // Login Screen LEDs (General Footer)
+            const genLed = $('general-led-login');
+            const genTxt = $('general-text-login');
+
+            // Set all to syncing
             applyStatus(led, txt, 'syncing', 'Syncing...');
-            if(dLed) applyStatus(dLed, dTxt, 'syncing', 'Syncing...');
-            if(mLed) applyStatus(mLed, null, 'syncing', '');
+            applyStatus(adminLed, adminTxt, 'syncing', 'Syncing...');
+            applyStatus(genLed, genTxt, 'syncing', 'Syncing...');
 
             setTimeout(() => {
                 const isOnline = navigator.onLine; 
                 const className = isOnline ? 'connected' : 'disconnected';
-                const msg = isOnline ? 'Connected' : 'Disconnected';
+                const msg = isOnline ? 'Connected' : 'Offline';
 
                 applyStatus(led, txt, className, msg);
-                if(dLed) applyStatus(dLed, dTxt, className, msg);
-                if(mLed) applyStatus(mLed, null, className, '');
+                applyStatus(adminLed, adminTxt, className, msg);
+                applyStatus(genLed, genTxt, className, msg);
             }, 1500);
         }
 
@@ -718,28 +592,38 @@
             if(textEl) textEl.innerText = textMsg;
         }
 
-        setInterval(updateCloudStatus, 5000);
+        function manualCloudSync() {
+            notify('Syncing...', 'info');
+            Store.sync().then(success => {
+                if(success) {
+                    notify('Sync Complete');
+                    updateCloudStatus();
+                } else {
+                    notify('Sync Failed. Check connection.', 'error');
+                }
+            });
+        }
+
+        setInterval(updateCloudStatus, 10000);
         updateCloudStatus();
 
         /* --- AUTH --- */
-        // FIX: Robust Class Toggling to ensure visual feedback works
         function selectRole(role) {
             currentRole = role;
             const empBtn = $('btn-role-emp');
             const adminBtn = $('btn-role-admin');
+            const cloudPanel = $('admin-cloud-settings');
 
-            // Clear active classes
             empBtn.classList.remove('active');
             adminBtn.classList.remove('active');
 
-            // Add active class to the selected one
             if (role === 'EMP') {
                 empBtn.classList.add('active');
+                cloudPanel.classList.add('hidden');
             } else {
                 adminBtn.classList.add('active');
+                cloudPanel.classList.remove('hidden');
             }
-            
-            console.log("Role Selected via Button:", role); // Debug log
         }
 
         function handleLogin(e) {
@@ -748,7 +632,6 @@
             const p = $('login-pass').value.trim();
             const users = Store.get('users');
             
-            // FIX: Robust User Search
             const user = users.find(x => (x.id.toLowerCase() === u.toLowerCase() || x.email.toLowerCase() === u.toLowerCase()) && x.pass === p);
 
             if(user) {
@@ -757,8 +640,6 @@
                     return;
                 }
                 
-                // FIX: Only block if appIsOnline is false (User manually toggled)
-                // We do not auto-block based on navigator.onLine to prevent "Login Not Possible"
                 if (!appIsOnline) {
                     notify('Login Disabled (Offline Mode)', 'error');
                     return;
@@ -777,6 +658,7 @@
             $('auth-screen').classList.remove('hidden');
             $('login-user').value = '';
             $('login-pass').value = '';
+            selectRole('EMP');
         }
 
         /* --- DASHBOARD INIT --- */
@@ -824,11 +706,41 @@
 
             if(newState) {
                 sidebar.classList.add('open');
-                backdrop.classList.add('open');
+                backdrop.classList.remove('hidden');
             } else {
                 sidebar.classList.remove('open');
-                backdrop.classList.remove('open');
+                backdrop.classList.add('hidden');
             }
+        }
+
+        /* --- CLOUD KEY UPDATE LOGIC --- */
+        function toggleCloudEdit() {
+            const area = $('cloud-edit-area');
+            const btnId = $('edit-bin-id');
+            const btnKey = $('edit-master-key');
+            
+            if(area.classList.contains('open')) {
+                area.classList.remove('open');
+            } else {
+                // Pre-fill with current keys
+                btnId.value = CLOUD_CONFIG.binId;
+                btnKey.value = CLOUD_CONFIG.masterKey;
+                area.classList.add('open');
+            }
+        }
+
+        function saveNewCloudKeys() {
+            const newBin = $('edit-bin-id').value.trim();
+            const newKey = $('edit-master-key').value.trim();
+            
+            if(!newBin || !newKey) return notify("Both fields required", 'error');
+            
+            CLOUD_CONFIG.binId = newBin;
+            CLOUD_CONFIG.masterKey = newKey;
+            
+            notify("Keys Updated. Syncing...");
+            manualCloudSync();
+            $('cloud-edit-area').classList.remove('open');
         }
 
         /* --- EMPLOYEE LOGIC --- */
@@ -845,6 +757,7 @@
             navigator.geolocation.getCurrentPosition(pos => {
                 const att = Store.get('attendance');
                 const today = new Date().toISOString().split('T')[0];
+                
                 if(att.find(x => x.userId === currentUser.id && x.date === today)) {
                     return notify('Already checked in today', 'error');
                 }
@@ -859,6 +772,8 @@
                     lng: pos.coords.longitude
                 });
                 Store.set('attendance', att);
+                Store.push('attendance', att);
+
                 $('att-status').innerText = 'Checked In';
                 $('att-status').className = 'badge badge-success mb-2';
                 $('att-status').style.background = 'var(--success)';
@@ -874,6 +789,8 @@
             if(rec) {
                 rec.checkOut = new Date().toLocaleTimeString();
                 Store.set('attendance', att);
+                Store.push('attendance', att);
+
                 $('att-status').innerText = 'Checked Out';
                 $('att-status').style.background = 'var(--secondary)';
                 $('btn-emp-checkout').classList.add('hidden');
@@ -895,18 +812,23 @@
                 status: 'Pending'
             });
             Store.set('leaves', leaves);
+            Store.push('leaves', leaves);
+
             notify('Leave request sent');
             $('leave-from').value = ''; $('leave-to').value = ''; $('leave-reason').value = '';
             loadEmpLeaves();
         }
 
         function loadEmpLeaves() {
-            const tbody = $('emp-leave-history').querySelector('tbody');
+            const tbody = $('emp-leave-history');
+            if(!tbody) return;
             tbody.innerHTML = '';
             const leaves = Store.get('leaves').filter(x => x.userId === currentUser.id);
             leaves.forEach(l => {
-                const badgeClass = l.status === 'Approved' ? 'badge-success' : l.status === 'Rejected' ? 'badge-danger' : 'badge-warning';
-                tbody.innerHTML += `<tr><td>${l.from} to ${l.to}</td><td>${l.reason}</td><td><span class="badge ${badgeClass}">${l.status}</span></td></tr>`;
+                let color = 'orange';
+                if(l.status === 'Approved') color = 'green';
+                if(l.status === 'Rejected') color = 'red';
+                tbody.innerHTML += `<tr><td>${l.from} to ${l.to}</td><td>${l.reason}</td><td><span style="font-weight:bold; color:${color}">${l.status}</span></td></tr>`;
             });
         }
 
@@ -930,6 +852,7 @@
                 users[idx].name = $('set-name').value;
                 if($('set-pass').value) users[idx].pass = $('set-pass').value;
                 Store.set('users', users);
+                Store.push('users', users);
                 currentUser = users[idx];
                 notify('Profile Updated');
             }
@@ -945,6 +868,7 @@
         }
 
         function refreshMapMarkers() {
+            if(!map) return;
             markers.forEach(m => map.removeLayer(m));
             markers = [];
             const att = Store.get('attendance');
@@ -970,13 +894,16 @@
 
         /* COMPANY MANAGEMENT */
         function loadCompanies() {
-            const tbody = $('comp-table').querySelector('tbody');
+            const tbody = $('comp-table');
+            if(!tbody) return;
             tbody.innerHTML = '';
             const comps = Store.get('companies');
             const selects = [$('new-emp-comp'), $('msg-company')];
             selects.forEach(sel => {
-                sel.innerHTML = '<option value="">Select Company</option>';
-                comps.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+                if(sel) {
+                    sel.innerHTML = '<option value="">Select Company</option>';
+                    comps.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+                }
             });
             comps.forEach(c => {
                 tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.email}</td><td><button class="btn btn-danger btn-sm" onclick="delComp(${c.id})">Del</button></td></tr>`;
@@ -989,22 +916,25 @@
             if(!name) return notify('Enter name', 'error');
             const comps = Store.get('companies');
             comps.push({ id: Date.now(), name, email });
-            Store.set('companies', comps);
+            Store.push('companies', comps);
             loadCompanies();
             $('comp-name').value = '';
+            $('comp-email').value = '';
         }
 
         function delComp(id) {
             if(confirm('Delete Company?')) {
                 const comps = Store.get('companies').filter(c => c.id !== id);
                 Store.set('companies', comps);
+                Store.push('companies', comps);
                 loadCompanies();
             }
         }
 
         /* TEAM MANAGEMENT */
         function loadTeam() {
-            const tbody = $('team-table').querySelector('tbody');
+            const tbody = $('team-table');
+            if(!tbody) return;
             tbody.innerHTML = '';
             const users = Store.get('users').filter(u => u.role === 'EMP');
             users.forEach(u => {
@@ -1026,14 +956,11 @@
             const mobile = $('new-emp-mobile').value;
             const email = $('new-emp-email').value;
             const pass = $('new-emp-pass').value || '1234';
-
             if(!id || !name) return notify('Fill required fields', 'error');
-
             const users = Store.get('users');
             if(users.find(u => u.id === id)) return notify('ID exists', 'error');
-
             users.push({ id, name, role: 'EMP', company: comp, mobile, email, pass, photo: `https://ui-avatars.com/api/?name=${name}` });
-            Store.set('users', users);
+            Store.push('users', users);
             closeModal('modal-add-emp');
             loadTeam();
             notify('Employee Added');
@@ -1043,6 +970,7 @@
             if(confirm('Remove employee?')) {
                 const users = Store.get('users').filter(u => u.id !== id);
                 Store.set('users', users);
+                Store.push('users', users);
                 loadTeam();
             }
         }
@@ -1051,22 +979,19 @@
         function loadReport() {
             const date = $('rep-date').value;
             if(!date) return notify('Select date', 'error');
-            const tbody = $('att-report').querySelector('tbody');
+            const tbody = $('att-report');
+            if(!tbody) return;
             tbody.innerHTML = '';
             const att = Store.get('attendance').filter(a => a.date === date);
             const users = Store.get('users');
-
             users.forEach(u => {
                 if(u.role === 'ADMIN') return;
-
                 const leaves = Store.get('leaves').filter(l => l.userId === u.id && l.status === 'Approved');
                 const isLeave = leaves.some(l => date >= l.from && date <= l.to);
-
                 if(isLeave) {
-                    tbody.innerHTML += `<tr><td>${u.name}</td><td colspan="2">On Leave</td><td>-</td><td><span class="badge badge-warning">Leave</span></td><td>-</td></tr>`;
+                    tbody.innerHTML += `<tr><td>${u.name}</td><td colspan="2">On Leave</td><td>-</td><td><span style="font-weight:bold;color:orange">Leave</span></td><td>-</td></tr>`;
                     return;
                 }
-
                 const record = att.find(a => a.userId === u.id);
                 if(record) {
                     tbody.innerHTML += `
@@ -1075,11 +1000,11 @@
                             <td>${record.checkIn}</td>
                             <td>${record.checkOut || '--:--'}</td>
                             <td><a href="#" onclick="openMap(${record.lat}, ${record.lng})">View</a></td>
-                            <td><span class="badge badge-success">Present</span></td>
+                            <td><span style="font-weight:bold;color:green">Present</span></td>
                             <td><button class="btn btn-outline btn-sm" onclick="regAtt(${record.id})">Edit</button></td>
                         </tr>`;
                 } else {
-                    tbody.innerHTML += `<tr><td>${u.name}</td><td>-</td><td>-</td><td>-</td><td><span class="badge badge-danger">Absent</span></td><td><button class="btn btn-outline btn-sm" onclick="markMan('${u.id}', '${date}')">Mark</button></td></tr>`;
+                    tbody.innerHTML += `<tr><td>${u.name}</td><td>-</td><td>-</td><td>-</td><td><span style="font-weight:bold;color:red">Absent</span></td><td><button class="btn btn-outline btn-sm" onclick="markMan('${u.id}', '${date}')">Mark</button></td></tr>`;
                 }
             });
         }
@@ -1089,7 +1014,7 @@
             if(time) {
                 const att = Store.get('attendance');
                 const r = att.find(x => x.id === id);
-                if(r) { r.checkIn = time; Store.set('attendance', att); loadReport(); notify('Regularized'); }
+                if(r) { r.checkIn = time; Store.set('attendance', att); Store.push('attendance', att); loadReport(); notify('Regularized'); }
             }
         }
 
@@ -1099,13 +1024,15 @@
                 const att = Store.get('attendance');
                 att.push({ id: Date.now(), userId: uid, date, checkIn: time, checkOut: null, lat:0, lng:0 });
                 Store.set('attendance', att);
+                Store.push('attendance', att);
                 loadReport();
                 notify('Marked Present');
             }
         }
 
         function loadLeavesForApproval() {
-            const tbody = $('leave-approve-table').querySelector('tbody');
+            const tbody = $('leave-approve-table');
+            if(!tbody) return;
             tbody.innerHTML = '';
             const leaves = Store.get('leaves').filter(l => l.status === 'Pending');
             leaves.forEach(l => {
@@ -1128,75 +1055,109 @@
             if(l) {
                 l.status = status;
                 Store.set('leaves', leaves);
+                Store.push('leaves', leaves);
                 loadLeavesForApproval();
                 notify(`Leave ${status}`);
             }
         }
 
-        /* MESSAGING */
-        $('msg-target').addEventListener('change', (e) => {
-            const val = e.target.value;
-            $('group-select-container').classList.toggle('hidden', val !== 'selected');
-            $('individual-input').classList.toggle('hidden', val !== 'individual');
-        });
-
         function sendWhatsApp(type) {
-            const target = $('msg-target').value;
-            const msg = $('msg-content').value;
+            const target = 'all';
+            const msg = prompt("Enter broadcast message:");
             let phones = "";
-
-            if(target === 'individual') {
-                phones = $('msg-mobile').value;
-            } else if (target === 'selected') {
-                const comp = $('msg-company').value;
-                const users = Store.get('users').filter(u => u.role === 'EMP' && u.company === comp);
-                users.forEach(u => phones += u.mobile + ",");
-            } else {
-                const users = Store.get('users').filter(u => u.role === 'EMP');
-                users.forEach(u => phones += u.mobile + ",");
-            }
-
+            const users = Store.get('users').filter(u => u.role === 'EMP');
+            users.forEach(u => phones += u.mobile + ",");
+            
             if(!phones || !msg) return notify('Select recipients and message', 'error');
             const fullMsg = `[${type}] ${msg}`;
             window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(fullMsg)}&phone=${phones}`, '_blank');
             notify('WhatsApp Opened');
         }
 
-        /* CLOUD & UPDATES */
-        function saveCloudConfig() {
-            const bin = $('cloud-bin').value;
-            const key = $('cloud-key').value;
-            if(bin) {
-                localStorage.setItem('eas_cloud_bin', bin);
-                localStorage.setItem('eas_cloud_key', key);
-                notify('Cloud Settings Saved. Syncing started...');
-            } else {
-                notify('Enter details', 'error');
+        /* --- STORE SYNC METHODS --- */
+        Store.sync = async function() {
+            const binId = CLOUD_CONFIG.binId;
+            const masterKey = CLOUD_CONFIG.masterKey;
+
+            if (!binId || !masterKey) {
+                console.log("Cloud Sync Skipped: No credentials.");
+                return; 
             }
-        }
 
-        function triggerAppUpdate() {
-            notify('Checking for updates...', 'info');
-            setTimeout(() => {
-                notify('Update found! Downloading...', 'info');
-                setTimeout(() => {
-                    notify('Update Installed. Refreshing...');
-                    setTimeout(() => location.reload(), 2000);
-                }, 1500);
-            }, 1000);
-        }
+            try {
+                const url = `https://api.jsonbin.io/v3/b/${binId}/latest`;
+                const response = await fetch(url, {
+                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': masterKey }
+                });
+                const data = await response.json();
+                const record = data.record;
 
-        function openModal(id) { $(id).classList.remove('hidden'); }
-        function closeModal(id) { $(id).classList.add('hidden'); }
+                if (record) {
+                    console.log("Data fetched from Cloud successfully.");
+                    if(record.users) this.set('users', record.users);
+                    if(record.attendance) this.set('attendance', record.attendance);
+                    if(record.leaves) this.set('leaves', record.leaves);
+                    if(record.companies) this.set('companies', record.companies);
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error("Sync Error:", error);
+                return false;
+            }
+        };
+
+        Store.push = async function(key, data) {
+            this.set(key, data);
+            const binId = CLOUD_CONFIG.binId;
+            const masterKey = CLOUD_CONFIG.masterKey;
+
+            if (!binId || !masterKey) return; 
+
+            try {
+                const fullState = {
+                    users: this.get('users'),
+                    attendance: this.get('attendance'),
+                    leaves: this.get('leaves'),
+                    companies: this.get('companies')
+                };
+                const payload = { record: fullState };
+
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': masterKey },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (response.ok) {
+                    console.log("Cloud Push Successful.");
+                } else {
+                    console.error("Cloud Push Failed.");
+                }
+            } catch (e) {
+                console.error("Cloud Push Error:", e);
+            }
+        };
+
+        /* --- HELPERS --- */
+        function openModal(id) { 
+            const el = $(id); 
+            el.classList.remove('hidden'); 
+            setTimeout(() => el.classList.add('open'), 10); 
+        }
+        function closeModal(id) { 
+            const el = $(id); 
+            el.classList.remove('open'); 
+            setTimeout(() => el.classList.add('hidden'), 200); 
+        }
         function openMap(lat, lng) { window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank'); }
 
         /* --- INIT LOADERS --- */
-        $('adm-team').addEventListener('click', loadTeam);
-        $('adm-comp').addEventListener('click', loadCompanies);
-        $('adm-att').addEventListener('click', loadReport);
-        $('adm-leave').addEventListener('click', loadLeavesForApproval);
-        $('emp-leave').addEventListener('click', loadEmpLeaves);
-
+        if($('adm-team')) $('adm-team').addEventListener('click', loadTeam);
+        if($('adm-comp')) $('adm-comp').addEventListener('click', loadCompanies);
+        if($('adm-att')) $('adm-att').addEventListener('click', loadReport);
+        if($('adm-leave')) $('adm-leave').addEventListener('click', loadLeavesForApproval);
+        if($('emp-leave')) $('emp-leave').addEventListener('click', loadEmpLeaves);
     </script>
 </body>
 </html>
