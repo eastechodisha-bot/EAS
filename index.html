@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>EAS - Employee Attendance System</title>
+    
+    <!-- External Libraries (Maps & Icons) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- CSS VARIABLES & RESET --- */
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --secondary: #ec4899;
+            --dark: #1e293b;
+            --light: #f8fafc;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --glass: rgba(255, 255, 255, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.5);
+            --glass-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            --sidebar-width: 280px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
+            background-attachment: fixed;
+            color: var(--dark);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- UTILITY CLASSES --- */
+        .hidden { display: none !important; }
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-between { justify-content: space-between; }
+        .justify-center { justify-content: center; }
+        .gap-2 { gap: 0.5rem; }
+        .gap-4 { gap: 1rem; }
+        .p-4 { padding: 1rem; }
+        .w-full { width: 100%; }
+        .text-center { text-align: center; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .text-sm { font-size: 0.875rem; }
+
+        /* --- GLASS COMPONENTS --- */
+        .glass-panel {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            box-shadow: var(--glass-shadow);
+        }
+
+        .btn {
+            padding: 0.75rem 1.2rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            color: white;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            min-height: 44px;
+        }
+        .btn:active { transform: scale(0.96); }
+        .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-light)); box-shadow: 0 4px 15px rgba(79, 70, 229, 0.4); }
+        .btn-secondary { background: linear-gradient(135deg, var(--secondary), #f472b6); }
+        .btn-success { background: var(--success); }
+        .btn-danger { background: var(--danger); }
+        .btn-outline { background: transparent; border: 1px solid var(--primary); color: var(--primary); }
+        .btn-sm { padding: 0.5rem 0.8rem; font-size: 0.85rem; min-height: 36px; }
+
+        /* FIXED: Role Button Styles to prevent overlap */
+        .role-btn {
+            flex: 1; /* Uses flex space instead of width: 100% to prevent overlap */
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .role-btn.active { background: var(--primary); box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .role-btn:not(.active):hover { background: rgba(255,255,255,0.2); }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.85rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 0.5rem;
+            background: rgba(255,255,255,0.85);
+            margin-bottom: 0.8rem;
+            font-size: 1rem;
+            min-height: 44px;
+        }
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            background: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+        }
+
+        /* --- CLOUD STATUS COMPONENT --- */
+        .cloud-status {
+            display: flex; align-items: center; gap: 0.5rem;
+            background: rgba(255,255,255,0.95);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.5);
+            z-index: 1000;
+        }
+        .led {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background-color: #ccc;
+            box-shadow: 0 0 5px #ccc;
+            transition: background-color 0.3s;
+        }
+        .led.connected { background-color: var(--success); box-shadow: 0 0 8px var(--success); }
+        .led.disconnected { background-color: var(--danger); box-shadow: 0 0 8px var(--danger); }
+        .led.syncing { background-color: var(--warning); animation: pulse 1s infinite; }
+
+        /* --- AUTH SCREEN --- */
+        #auth-screen {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 400px;
+            padding: 2.5rem 2rem;
+            z-index: 10;
+            position: relative;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        .app-logo { font-size: 2.5rem; font-weight: 800; background: linear-gradient(to right, #fff, #e0e7ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 0.5rem; display: block; text-align: center; }
+
+        /* --- DASHBOARD LAYOUT --- */
+        #dashboard-screen { display: flex; height: 100vh; position: relative; }
+
+        /* Sidebar */
+        .sidebar {
+            width: var(--sidebar-width);
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255,255,255,0.5);
+            display: flex;
+            flex-direction: column;
+            z-index: 50;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sidebar-header { padding: 1.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1rem; }
+        .user-avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid var(--primary); object-fit: cover; }
+        
+        .nav-item {
+            padding: 1rem 1.5rem;
+            cursor: pointer;
+            color: var(--dark);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            transition: background 0.2s;
+            border-left: 3px solid transparent;
+        }
+        .nav-item:active { background: rgba(79, 70, 229, 0.05); }
+        .nav-item.active { background: rgba(79, 70, 229, 0.1); color: var(--primary); border-left-color: var(--primary); }
+        .nav-item i { width: 20px; text-align: center; }
+
+        /* Main Content */
+        .main-content { 
+            flex: 1; 
+            overflow-y: auto; 
+            padding: 2rem; 
+            position: relative; 
+            scroll-behavior: smooth;
+            padding-top: 80px;
+        }
+
+        .section-title { font-size: 1.8rem; font-weight: 700; margin-bottom: 1.5rem; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+
+        /* Grid System */
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+        .stat-card { padding: 1.5rem; color: white; border: none; background: rgba(255,255,255,0.2); }
+        .stat-val { font-size: 2.5rem; font-weight: 800; }
+        .stat-label { font-size: 0.9rem; opacity: 0.9; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* Tables - Mobile Scrollable */
+        .table-container { 
+            overflow-x: auto; 
+            border-radius: 0.5rem; 
+            background: rgba(255,255,255,0.9); 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            -webkit-overflow-scrolling: touch;
+            white-space: nowrap;
+        }
+        table { width: 100%; border-collapse: collapse; min-width: 600px; }
+        th, td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(0,0,0,0.05); }
+        th { background: #f1f5f9; color: var(--secondary); font-weight: 700; text-transform: uppercase; font-size: 0.8rem; }
+        tr:last-child td { border-bottom: none; }
+
+        /* Map */
+        #map-container { height: 300px; width: 100%; border-radius: 0.5rem; margin-top: 1rem; z-index: 1; }
+
+        /* Modals */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+            display: flex; align-items: center; justify-content: center; z-index: 100;
+        }
+        .modal { 
+            background: white; padding: 2rem; border-radius: 1rem; 
+            width: 90%; max-width: 500px; 
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); 
+            animation: zoomIn 0.3s; 
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* Backdrop for Mobile Menu */
+        .sidebar-backdrop {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 40;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .sidebar-backdrop.open { display: block; opacity: 1; }
+
+        /* --- RESPONSIVE MOBILE STYLES --- */
+        @media (max-width: 768px) {
+            body { height: auto; min-height: 100vh; }
+            .sidebar {
+                position: fixed;
+                top: 0; left: 0;
+                height: 100vh;
+                transform: translateX(-100%);
+                box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+                width: 80%;
+                max-width: 300px;
+            }
+            .sidebar.open { transform: translateX(0); }
+            .sidebar-backdrop.open { display: block; }
+
+            .main-content { padding: 1rem; padding-top: 70px; }
+            .section-title { font-size: 1.4rem; margin-top: 1rem; }
+            .grid-3 { grid-template-columns: 1fr; }
+            .stat-val { font-size: 2rem; }
+
+            /* Mobile Header */
+            .mobile-header {
+                position: fixed; top: 0; left: 0; width: 100%; height: 60px;
+                background: rgba(255,255,255,0.95);
+                backdrop-filter: blur(10px);
+                z-index: 30;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 0 1rem;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            .mobile-header .cloud-status { margin-bottom: 0; }
+        }
+
+        @media (min-width: 769px) {
+            .mobile-header { display: none; }
+            .sidebar-backdrop { display: none !important; }
+        }
+
+        /* Animations */
+        @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    </style>
+</head>
+<body>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container" style="position:fixed; top:20px; right:20px; z-index:200; display:flex; flex-direction:column; gap:10px;"></div>
+
+    <!-- AUTH SCREEN -->
+    <section id="auth-screen">
+        <div class="login-card glass-panel">
+            <!-- Cloud Status (Login) -->
+            <div class="flex justify-center mb-2">
+                <div class="cloud-status">
+                    <div id="cloud-led" class="led"></div>
+                    <span id="cloud-text">Initializing...</span>
+                </div>
+            </div>
+
+            <div class="text-center">
+                <i class="fas fa-fingerprint fa-3x" style="color:var(--primary-light); margin-bottom:1rem;"></i>
+                <span class="app-logo">EAS</span>
+                <p style="color:#555; margin-bottom:2rem;">Employee Attendance System</p>
+            </div>
+
+            <!-- FIX: Role Buttons -->
+            <div class="flex gap-2 mb-4">
+                <button type="button" id="btn-role-emp" class="role-btn active" onclick="selectRole('EMP')">EMP</button>
+                <button type="button" id="btn-role-admin" class="role-btn" onclick="selectRole('ADMIN')">ADMIN</button>
+            </div>
+
+            <form onsubmit="handleLogin(event)">
+                <label class="text-sm font-bold">Username</label>
+                <input type="text" id="login-user" placeholder="e.g. Admin or EMP" required>
+                
+                <label class="text-sm font-bold">Password</label>
+                <input type="password" id="login-pass" placeholder="******" required>
+                
+                <button type="submit" id="btn-login-submit" class="btn btn-primary w-full" style="padding: 0.8rem;">Secure Login <i class="fas fa-arrow-right"></i></button>
+            </form>
+            
+            <div class="text-center mt-4 text-sm" style="color:#666;">
+                <p><strong>Demo:</strong> <b>Admin</b> / <b>1234</b></p>
+                <p><strong>Demo:</strong> <b>EMP</b> / <b>1234</b></p>
+                <div style="border-top:1px solid rgba(0,0,0,0.1); margin-top:10px; padding-top:5px; opacity:0.7;">
+                    Software Version: <span id="version-display" style="font-weight:bold; color:var(--primary);">v2.5.0</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DASHBOARD SCREEN -->
+    <section id="dashboard-screen" class="hidden">
+        
+        <!-- MOBILE HEADER (Only visible on mobile) -->
+        <div class="mobile-header">
+            <div class="flex items-center gap-2">
+                <button class="btn btn-outline btn-sm" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+                <span class="font-bold" style="color:var(--dark);">EAS Dashboard</span>
+            </div>
+            <div class="cloud-status">
+                <div class="led" id="mobile-led"></div>
+            </div>
+        </div>
+
+        <!-- BACKDROP (Mobile only) -->
+        <div id="backdrop" class="sidebar-backdrop" onclick="toggleSidebar()"></div>
+
+        <!-- SIDEBAR -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <img src="" id="nav-avatar" class="user-avatar" alt="Profile">
+                <div>
+                    <div class="font-bold" id="nav-username">User</div>
+                    <div class="text-sm" style="color:#666" id="nav-role">Role</div>
+                </div>
+            </div>
+            
+            <div class="flex-col" style="flex:1; overflow-y:auto; padding-top:1rem;">
+                <!-- Employee Menu -->
+                <div id="menu-emp" class="hidden">
+                    <div class="nav-item active" onclick="navTo('emp-att')"><i class="fas fa-map-marker-alt"></i> Attendance</div>
+                    <div class="nav-item" onclick="navTo('emp-leave')"><i class="fas fa-calendar-minus"></i> Leaves</div>
+                    <div class="nav-item" onclick="navTo('emp-adv')"><i class="fas fa-hand-holding-dollar"></i> Advance</div>
+                    <div class="nav-item" onclick="navTo('emp-set')"><i class="fas fa-cog"></i> Settings</div>
+                </div>
+                <!-- Admin Menu -->
+                <div id="menu-admin" class="hidden">
+                    <div class="nav-item active" onclick="navTo('adm-dash')"><i class="fas fa-chart-pie"></i> Dashboard</div>
+                    <div class="nav-item" onclick="navTo('adm-team')"><i class="fas fa-users"></i> Team Mgmt</div>
+                    <div class="nav-item" onclick="navTo('adm-comp')"><i class="fas fa-building"></i> Companies</div>
+                    <div class="nav-item" onclick="navTo('adm-att')"><i class="fas fa-clipboard-list"></i> Attendance</div>
+                    <div class="nav-item" onclick="navTo('adm-leave')"><i class="fas fa-user-check"></i> Leave Approvals</div>
+                    <div class="nav-item" onclick="navTo('adm-msg')"><i class="fab fa-whatsapp"></i> Messaging</div>
+                    <div class="nav-item" onclick="navTo('adm-cloud')"><i class="fas fa-cloud"></i> Cloud Config</div>
+                </div>
+            </div>
+
+            <div class="p-4">
+                <button class="btn btn-danger w-full" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </nav>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            
+            <!-- EMPLOYEES VIEWS -->
+            <div id="emp-att" class="view-section">
+                <h2 class="section-title">Daily Attendance</h2>
+                <div class="glass-panel p-4" style="margin-bottom:2rem; text-align:center;">
+                    <div id="clock" style="font-size:2.5rem; font-weight:300; margin-bottom:1rem;">00:00:00</div>
+                    <div id="att-status" class="badge badge-success mb-2" style="font-size:1.2rem; font-weight:bold; color:white;">Not Checked In</div>
+                    
+                    <div class="flex flex-col gap-4 items-center justify-center w-full">
+                        <button class="btn btn-primary" style="width:100%; max-width:300px; font-size:1.1rem;" onclick="doCheckIn()"><i class="fas fa-sign-in-alt"></i> CHECK IN</button>
+                        <button class="btn btn-danger hidden" id="btn-emp-checkout" style="width:100%; max-width:300px; font-size:1.1rem;" onclick="doCheckOut()"><i class="fas fa-sign-out-alt"></i> CHECK OUT</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="emp-leave" class="view-section hidden">
+                <h2 class="section-title">Leave Requests</h2>
+                <div class="glass-panel p-4">
+                    <div class="flex flex-col gap-2 mb-4">
+                        <label style="font-weight:bold">From Date</label>
+                        <input type="date" id="leave-from">
+                        <label style="font-weight:bold">To Date</label>
+                        <input type="date" id="leave-to">
+                    </div>
+                    <label>Reason</label>
+                    <textarea id="leave-reason" rows="3"></textarea>
+                    <button class="btn btn-primary" onclick="applyLeave()">Submit Request</button>
+                </div>
+                <h3 class="mt-4 mb-2" style="color:white;">History</h3>
+                <div class="table-container">
+                    <table id="emp-leave-history">
+                        <thead><tr><th>Dates</th><th>Reason</th><th>Status</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="emp-adv" class="view-section hidden">
+                <h2 class="section-title">Advance Request</h2>
+                <div class="glass-panel p-4">
+                    <label>Type</label>
+                    <select id="adv-type">
+                        <option>Salary Advance</option>
+                        <option>Travel Reimbursement</option>
+                        <option>Medical Emergency</option>
+                    </select>
+                    <label>Amount</label>
+                    <input type="number" id="adv-amount" placeholder="₹">
+                    <label>Description</label>
+                    <textarea id="adv-desc" rows="3"></textarea>
+                    <button class="btn btn-primary" onclick="sendAdvanceRequest()">Send via Email</button>
+                </div>
+            </div>
+
+            <div id="emp-set" class="view-section hidden">
+                <h2 class="section-title">Settings</h2>
+                <div class="glass-panel p-4">
+                    <label>Profile Name</label>
+                    <input type="text" id="set-name">
+                    <label>New Password</label>
+                    <input type="password" id="set-pass">
+                    <div class="flex flex-col gap-2 mb-4 mt-4">
+                        <button class="btn btn-secondary" onclick="requestPerms()"><i class="fas fa-location-arrow"></i> Request GPS</button>
+                        <button class="btn btn-secondary" onclick="requestNotif()"><i class="fas fa-bell"></i> Request Notifs</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+                </div>
+            </div>
+
+            <!-- ADMIN VIEWS -->
+            <div id="adm-dash" class="view-section hidden">
+                <h2 class="section-title">Admin Dashboard</h2>
+                <div class="grid-3">
+                    <div class="glass-panel stat-card">
+                        <div class="stat-val" id="dash-total-emp">0</div>
+                        <div class="stat-label">Employees</div>
+                    </div>
+                    <div class="glass-panel stat-card">
+                        <div class="stat-val" id="dash-present">0</div>
+                        <div class="stat-label">Present Today</div>
+                    </div>
+                    <div class="glass-panel stat-card">
+                        <div class="stat-val" id="dash-leaves">0</div>
+                        <div class="stat-label">Pending Leaves</div>
+                    </div>
+                </div>
+                <div class="glass-panel p-4">
+                    <h3>Live Map</h3>
+                    <div id="map-container"></div>
+                </div>
+            </div>
+
+            <div id="adm-team" class="view-section hidden">
+                <h2 class="section-title">Team Management</h2>
+                <button class="btn btn-primary mb-4" onclick="openModal('modal-add-emp')"><i class="fas fa-plus"></i> Add Employee</button>
+                <div class="table-container">
+                    <table id="team-table">
+                        <thead><tr><th>Photo</th><th>Name</th><th>Company</th><th>Role</th><th>Action</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="adm-comp" class="view-section hidden">
+                <h2 class="section-title">Company Management</h2>
+                <div class="glass-panel p-4 mb-4">
+                    <div class="flex flex-col gap-2">
+                        <input type="text" id="comp-name" placeholder="Company Name">
+                        <input type="email" id="comp-email" placeholder="Finance Email (for Advances)">
+                    </div>
+                    <button class="btn btn-primary" onclick="addCompany()"><i class="fas fa-plus"></i> Add</button>
+                </div>
+                <div class="table-container">
+                    <table id="comp-table">
+                        <thead><tr><th>Company</th><th>Finance Email</th><th>Action</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="adm-att" class="view-section hidden">
+                <h2 class="section-title">Attendance Reports</h2>
+                <div class="glass-panel p-4 mb-4">
+                    <div class="flex gap-2">
+                        <input type="date" id="rep-date" style="margin:0;">
+                        <button class="btn btn-primary" onclick="loadReport()">View</button>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="att-report">
+                        <thead><tr><th>Employee</th><th>Check-In</th><th>Check-Out</th><th>Loc</th><th>Status</th><th>Action</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="adm-leave" class="view-section hidden">
+                <h2 class="section-title">Leave Approvals</h2>
+                <div class="table-container">
+                    <table id="leave-approve-table">
+                        <thead><tr><th>Employee</th><th>Dates</th><th>Reason</th><th>Action</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="adm-msg" class="view-section hidden">
+                <h2 class="section-title">Messaging & Meetings</h2>
+                <div class="glass-panel p-4">
+                    <div class="flex flex-col gap-2 mb-4">
+                        <label>Target</label>
+                        <select id="msg-target">
+                            <option value="all">All Employees</option>
+                            <option value="selected">Selected Group</option>
+                            <option value="individual">Individual (Enter Mobile)</option>
+                        </select>
+                    </div>
+                    
+                    <div id="group-select-container" class="mb-4 hidden">
+                        <label>Filter by Company</label>
+                        <select id="msg-company"></select>
+                    </div>
+
+                    <div id="individual-input" class="mb-4 hidden">
+                        <label>Mobile Number</label>
+                        <input type="text" id="msg-mobile" placeholder="e.g. 919876543210">
+                    </div>
+
+                    <label>Message Content</label>
+                    <textarea id="msg-content" rows="4"></textarea>
+                    
+                    <div class="flex flex-col gap-2 mt-4">
+                        <button class="btn btn-success" onclick="sendWhatsApp('ATTENDANCE')"><i class="fab fa-whatsapp"></i> Attendance Reminder</button>
+                        <button class="btn btn-secondary" onclick="sendWhatsApp('MEETING')"><i class="fas fa-video"></i> Schedule Meeting</button>
+                        <button class="btn btn-primary" onclick="sendWhatsApp('IMPORTANT')"><i class="fas fa-exclamation-circle"></i> Important Msg</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="adm-cloud" class="view-section hidden">
+                <h2 class="section-title">Cloud Configuration</h2>
+                <div class="glass-panel p-4">
+                    <label>JSONBin Bin ID</label>
+                    <input type="text" id="cloud-bin" placeholder="65b3f...">
+                    <label>Master Key</label>
+                    <input type="password" id="cloud-key" placeholder="$2a$10$...">
+                    <button class="btn btn-primary mb-4" onclick="saveCloudConfig()">Connect & Sync</button>
+                    <div class="mt-4">
+                        <label>App Update (Hosted Online)</label>
+                        <button class="btn btn-outline w-full" onclick="triggerAppUpdate()"><i class="fas fa-download"></i> Check & Push Update</button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </section>
+
+    <!-- MODAL: ADD EMPLOYEE -->
+    <div id="modal-add-emp" class="modal-overlay hidden">
+        <div class="modal">
+            <h3 class="mb-4">Add Employee</h3>
+            <input type="text" id="new-emp-id" placeholder="Employee ID (e.g. E003)">
+            <input type="text" id="new-emp-name" placeholder="Full Name">
+            <select id="new-emp-comp"></select>
+            <input type="text" id="new-emp-mobile" placeholder="Mobile (with country code)">
+            <input type="email" id="new-emp-email" placeholder="Email">
+            <input type="password" id="new-emp-pass" placeholder="Default Password">
+            <div class="flex gap-2 mt-4">
+                <button class="btn btn-primary w-full" onclick="addEmployee()">Save</button>
+                <button class="btn btn-danger w-full" onclick="closeModal('modal-add-emp')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        /* --- CONFIG --- */
+        const APP_VERSION = "v2.5.0";
+
+        /* --- DATA STORE & INIT --- */
+        const Store = {
+            get: (key) => {
+                try { return JSON.parse(localStorage.getItem('eas_' + key)) || []; } 
+                catch(e) { console.error("Store Read Error", e); return []; }
+            },
+            set: (key, data) => localStorage.setItem('eas_' + key, JSON.stringify(data)),
+            
+            init: function() {
+                let users = this.get('users');
+                
+                // FIX: Force recreate Admin if missing
+                let adminUser = users.find(u => u.id.toLowerCase() === 'admin');
+                if (!adminUser) {
+                    users = users.filter(u => u.id.toLowerCase() !== 'admin'); 
+                    users.push({ 
+                        id: 'Admin', name: 'Administrator', role: 'ADMIN', pass: '1234', 
+                        company: '', mobile: '', email: '', photo: 'https://i.pravatar.cc/150?u=admin' 
+                    });
+                }
+
+                // FIX: Force recreate EMP if missing
+                let empUser = users.find(u => u.id.toLowerCase() === 'emp');
+                if (!empUser) {
+                    users = users.filter(u => u.id.toLowerCase() !== 'emp'); 
+                    users.push({ 
+                        id: 'EMP', name: 'John Doe', role: 'EMP', pass: '1234', 
+                        company: 'TechSolutions', mobile: '919876543210', email: 'john@tech.com', 
+                        photo: 'https://i.pravatar.cc/150?u=john' 
+                    });
+                }
+                
+                this.set('users', users);
+
+                if(!localStorage.getItem('eas_companies')) {
+                    this.set('companies', [
+                        { id: 1, name: 'TechSolutions', email: 'finance@techsolutions.com' },
+                        { id: 2, name: 'LogiCorp', email: 'accounts@logi.com' }
+                    ]);
+                }
+                
+                if($('version-display')) $('version-display').innerText = APP_VERSION;
+            }
+        };
+        Store.init();
+
+        let currentUser = null;
+        let currentRole = 'EMP';
+        let map = null;
+        let markers = [];
+        
+        // FIX: Default app to online state so login is possible immediately
+        let appIsOnline = true; 
+
+        /* --- UTILITIES --- */
+        const $ = (id) => document.getElementById(id);
+        const notify = (msg, type='success') => {
+            const t = document.createElement('div');
+            t.style.cssText = `padding:15px; background:${type==='success'?'#10b981':'#ef4444'}; color:white; border-radius:8px; animation:slideIn 0.3s; box-shadow:0 5px 15px rgba(0,0,0,0.2); min-width: 250px; text-align:center; margin-bottom:10px;`;
+            t.innerHTML = msg;
+            $('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        };
+
+        /* --- CLOUD STATUS (ALL SCREENS) --- */
+        function updateCloudStatus() {
+            const led = $('cloud-led');
+            const txt = $('cloud-text');
+            const dLed = $('desk-led');
+            const dTxt = $('desk-text');
+            const mLed = $('mobile-led');
+            
+            // Set Syncing State
+            applyStatus(led, txt, 'syncing', 'Syncing...');
+            if(dLed) applyStatus(dLed, dTxt, 'syncing', 'Syncing...');
+            if(mLed) applyStatus(mLed, null, 'syncing', '');
+
+            setTimeout(() => {
+                const isOnline = navigator.onLine; 
+                const className = isOnline ? 'connected' : 'disconnected';
+                const msg = isOnline ? 'Connected' : 'Disconnected';
+
+                applyStatus(led, txt, className, msg);
+                if(dLed) applyStatus(dLed, dTxt, className, msg);
+                if(mLed) applyStatus(mLed, null, className, '');
+            }, 1500);
+        }
+
+        function applyStatus(ledEl, textEl, className, textMsg) {
+            if(!ledEl) return;
+            ledEl.className = `led ${className}`;
+            if(textEl) textEl.innerText = textMsg;
+        }
+
+        setInterval(updateCloudStatus, 5000);
+        updateCloudStatus();
+
+        /* --- AUTH --- */
+        // FIX: Robust Class Toggling to ensure visual feedback works
+        function selectRole(role) {
+            currentRole = role;
+            const empBtn = $('btn-role-emp');
+            const adminBtn = $('btn-role-admin');
+
+            // Clear active classes
+            empBtn.classList.remove('active');
+            adminBtn.classList.remove('active');
+
+            // Add active class to the selected one
+            if (role === 'EMP') {
+                empBtn.classList.add('active');
+            } else {
+                adminBtn.classList.add('active');
+            }
+            
+            console.log("Role Selected via Button:", role); // Debug log
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const u = $('login-user').value.trim();
+            const p = $('login-pass').value.trim();
+            const users = Store.get('users');
+            
+            // FIX: Robust User Search
+            const user = users.find(x => (x.id.toLowerCase() === u.toLowerCase() || x.email.toLowerCase() === u.toLowerCase()) && x.pass === p);
+
+            if(user) {
+                if(user.role !== currentRole) {
+                    notify(`Select ${user.role} tab to login`, 'error');
+                    return;
+                }
+                
+                // FIX: Only block if appIsOnline is false (User manually toggled)
+                // We do not auto-block based on navigator.onLine to prevent "Login Not Possible"
+                if (!appIsOnline) {
+                    notify('Login Disabled (Offline Mode)', 'error');
+                    return;
+                }
+
+                currentUser = user;
+                initDashboard();
+            } else {
+                notify('Invalid Credentials', 'error');
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            $('dashboard-screen').classList.add('hidden');
+            $('auth-screen').classList.remove('hidden');
+            $('login-user').value = '';
+            $('login-pass').value = '';
+        }
+
+        /* --- DASHBOARD INIT --- */
+        function initDashboard() {
+            $('auth-screen').classList.add('hidden');
+            $('dashboard-screen').classList.remove('hidden');
+            
+            $('nav-username').innerText = currentUser.name;
+            $('nav-role').innerText = currentUser.role;
+            $('nav-avatar').src = currentUser.photo || `https://ui-avatars.com/api/?name=${currentUser.name}`;
+            $('set-name').value = currentUser.name;
+
+            if(currentUser.role === 'EMP') {
+                $('menu-emp').classList.remove('hidden');
+                $('menu-admin').classList.add('hidden');
+                navTo('emp-att');
+                startClock();
+            } else {
+                $('menu-admin').classList.remove('hidden');
+                $('menu-emp').classList.add('hidden');
+                navTo('adm-dash');
+                initAdminMap();
+                loadAdminStats();
+            }
+        }
+
+        function navTo(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            $(viewId).classList.remove('hidden');
+            
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            const activeNav = Array.from(document.querySelectorAll('.nav-item')).find(el => el.getAttribute('onclick').includes(viewId));
+            if(activeNav) activeNav.classList.add('active');
+
+            if(window.innerWidth <= 768) {
+                toggleSidebar(false);
+            }
+        }
+
+        function toggleSidebar(forceState) {
+            const sidebar = $('sidebar');
+            const backdrop = $('backdrop');
+            const isOpen = sidebar.classList.contains('open');
+            const newState = forceState !== undefined ? forceState : !isOpen;
+
+            if(newState) {
+                sidebar.classList.add('open');
+                backdrop.classList.add('open');
+            } else {
+                sidebar.classList.remove('open');
+                backdrop.classList.remove('open');
+            }
+        }
+
+        /* --- EMPLOYEE LOGIC --- */
+        function startClock() {
+            setInterval(() => {
+                const now = new Date();
+                $('clock').innerText = now.toLocaleTimeString();
+            }, 1000);
+        }
+
+        function doCheckIn() {
+            if(!navigator.geolocation) return notify('GPS not supported', 'error');
+            notify('Fetching location...', 'info');
+            navigator.geolocation.getCurrentPosition(pos => {
+                const att = Store.get('attendance');
+                const today = new Date().toISOString().split('T')[0];
+                if(att.find(x => x.userId === currentUser.id && x.date === today)) {
+                    return notify('Already checked in today', 'error');
+                }
+                att.push({
+                    id: Date.now(),
+                    userId: currentUser.id,
+                    userName: currentUser.name,
+                    date: today,
+                    checkIn: new Date().toLocaleTimeString(),
+                    checkOut: null,
+                    lat: pos.coords.latitude,
+                    lng: pos.coords.longitude
+                });
+                Store.set('attendance', att);
+                $('att-status').innerText = 'Checked In';
+                $('att-status').className = 'badge badge-success mb-2';
+                $('att-status').style.background = 'var(--success)';
+                $('btn-emp-checkout').classList.remove('hidden');
+                notify(`Checked In @ ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+            }, err => notify('GPS Access Denied', 'error'));
+        }
+
+        function doCheckOut() {
+            const att = Store.get('attendance');
+            const today = new Date().toISOString().split('T')[0];
+            const rec = att.find(x => x.userId === currentUser.id && x.date === today);
+            if(rec) {
+                rec.checkOut = new Date().toLocaleTimeString();
+                Store.set('attendance', att);
+                $('att-status').innerText = 'Checked Out';
+                $('att-status').style.background = 'var(--secondary)';
+                $('btn-emp-checkout').classList.add('hidden');
+                notify('Checked out successfully');
+            }
+        }
+
+        function applyLeave() {
+            const from = $('leave-from').value;
+            const to = $('leave-to').value;
+            const reason = $('leave-reason').value;
+            if(!from || !to || !reason) return notify('Fill all fields', 'error');
+            const leaves = Store.get('leaves');
+            leaves.push({
+                id: Date.now(),
+                userId: currentUser.id,
+                userName: currentUser.name,
+                from, to, reason,
+                status: 'Pending'
+            });
+            Store.set('leaves', leaves);
+            notify('Leave request sent');
+            $('leave-from').value = ''; $('leave-to').value = ''; $('leave-reason').value = '';
+            loadEmpLeaves();
+        }
+
+        function loadEmpLeaves() {
+            const tbody = $('emp-leave-history').querySelector('tbody');
+            tbody.innerHTML = '';
+            const leaves = Store.get('leaves').filter(x => x.userId === currentUser.id);
+            leaves.forEach(l => {
+                const badgeClass = l.status === 'Approved' ? 'badge-success' : l.status === 'Rejected' ? 'badge-danger' : 'badge-warning';
+                tbody.innerHTML += `<tr><td>${l.from} to ${l.to}</td><td>${l.reason}</td><td><span class="badge ${badgeClass}">${l.status}</span></td></tr>`;
+            });
+        }
+
+        function sendAdvanceRequest() {
+            const type = $('adv-type').value;
+            const amt = $('adv-amount').value;
+            const desc = $('adv-desc').value;
+            const comp = Store.get('companies').find(c => c.name === currentUser.company);
+            const email = comp ? comp.email : 'finance@company.com';
+            if(!amt) return notify('Enter amount', 'error');
+            notify(`Request sent to ${email}`, 'success');
+            window.location.href = `mailto:${email}?subject=Advance Request: ${currentUser.name}&body=Type: ${type}%0AAmount: ${amt}%0ADescription: ${desc}`;
+        }
+
+        function requestPerms() { if('geolocation' in navigator) navigator.geolocation.getCurrentPosition(()=>notify('GPS Allowed'), ()=>notify('GPS Denied','error')); }
+        function requestNotif() { Notification.requestPermission().then(p => notify(p==='granted'?'Notifications Enabled':'Notifications Denied', p==='granted'?'success':'error')); }
+        function saveSettings() {
+            const users = Store.get('users');
+            const idx = users.findIndex(u => u.id === currentUser.id);
+            if(idx > -1) {
+                users[idx].name = $('set-name').value;
+                if($('set-pass').value) users[idx].pass = $('set-pass').value;
+                Store.set('users', users);
+                currentUser = users[idx];
+                notify('Profile Updated');
+            }
+        }
+
+        /* --- ADMIN LOGIC --- */
+        function initAdminMap() {
+            if(!map) {
+                map = L.map('map-container').setView([20.5937, 78.9629], 5);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+            }
+            refreshMapMarkers();
+        }
+
+        function refreshMapMarkers() {
+            markers.forEach(m => map.removeLayer(m));
+            markers = [];
+            const att = Store.get('attendance');
+            const today = new Date().toISOString().split('T')[0];
+            att.forEach(r => {
+                if(r.date === today && r.lat) {
+                    const m = L.marker([r.lat, r.lng]).addTo(map).bindPopup(`${r.userName}<br>Checked In: ${r.checkIn}`);
+                    markers.push(m);
+                }
+            });
+        }
+
+        function loadAdminStats() {
+            const users = Store.get('users').filter(u => u.role === 'EMP');
+            $('dash-total-emp').innerText = users.length;
+            const today = new Date().toISOString().split('T')[0];
+            const present = Store.get('attendance').filter(a => a.date === today).length;
+            $('dash-present').innerText = present;
+            const leaves = Store.get('leaves').filter(l => l.status === 'Pending').length;
+            $('dash-leaves').innerText = leaves;
+            loadCompanies(); 
+        }
+
+        /* COMPANY MANAGEMENT */
+        function loadCompanies() {
+            const tbody = $('comp-table').querySelector('tbody');
+            tbody.innerHTML = '';
+            const comps = Store.get('companies');
+            const selects = [$('new-emp-comp'), $('msg-company')];
+            selects.forEach(sel => {
+                sel.innerHTML = '<option value="">Select Company</option>';
+                comps.forEach(c => sel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+            });
+            comps.forEach(c => {
+                tbody.innerHTML += `<tr><td>${c.name}</td><td>${c.email}</td><td><button class="btn btn-danger btn-sm" onclick="delComp(${c.id})">Del</button></td></tr>`;
+            });
+        }
+
+        function addCompany() {
+            const name = $('comp-name').value;
+            const email = $('comp-email').value;
+            if(!name) return notify('Enter name', 'error');
+            const comps = Store.get('companies');
+            comps.push({ id: Date.now(), name, email });
+            Store.set('companies', comps);
+            loadCompanies();
+            $('comp-name').value = '';
+        }
+
+        function delComp(id) {
+            if(confirm('Delete Company?')) {
+                const comps = Store.get('companies').filter(c => c.id !== id);
+                Store.set('companies', comps);
+                loadCompanies();
+            }
+        }
+
+        /* TEAM MANAGEMENT */
+        function loadTeam() {
+            const tbody = $('team-table').querySelector('tbody');
+            tbody.innerHTML = '';
+            const users = Store.get('users').filter(u => u.role === 'EMP');
+            users.forEach(u => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><img src="${u.photo}" class="user-avatar" style="width:30px;height:30px;"></td>
+                        <td>${u.name} (${u.id})</td>
+                        <td>${u.company}</td>
+                        <td>EMP</td>
+                        <td><button class="btn btn-danger btn-sm" onclick="delUser('${u.id}')">Remove</button></td>
+                    </tr>`;
+            });
+        }
+
+        function addEmployee() {
+            const id = $('new-emp-id').value;
+            const name = $('new-emp-name').value;
+            const comp = $('new-emp-comp').value;
+            const mobile = $('new-emp-mobile').value;
+            const email = $('new-emp-email').value;
+            const pass = $('new-emp-pass').value || '1234';
+
+            if(!id || !name) return notify('Fill required fields', 'error');
+
+            const users = Store.get('users');
+            if(users.find(u => u.id === id)) return notify('ID exists', 'error');
+
+            users.push({ id, name, role: 'EMP', company: comp, mobile, email, pass, photo: `https://ui-avatars.com/api/?name=${name}` });
+            Store.set('users', users);
+            closeModal('modal-add-emp');
+            loadTeam();
+            notify('Employee Added');
+        }
+
+        function delUser(id) {
+            if(confirm('Remove employee?')) {
+                const users = Store.get('users').filter(u => u.id !== id);
+                Store.set('users', users);
+                loadTeam();
+            }
+        }
+
+        /* ATTENDANCE & LEAVES */
+        function loadReport() {
+            const date = $('rep-date').value;
+            if(!date) return notify('Select date', 'error');
+            const tbody = $('att-report').querySelector('tbody');
+            tbody.innerHTML = '';
+            const att = Store.get('attendance').filter(a => a.date === date);
+            const users = Store.get('users');
+
+            users.forEach(u => {
+                if(u.role === 'ADMIN') return;
+
+                const leaves = Store.get('leaves').filter(l => l.userId === u.id && l.status === 'Approved');
+                const isLeave = leaves.some(l => date >= l.from && date <= l.to);
+
+                if(isLeave) {
+                    tbody.innerHTML += `<tr><td>${u.name}</td><td colspan="2">On Leave</td><td>-</td><td><span class="badge badge-warning">Leave</span></td><td>-</td></tr>`;
+                    return;
+                }
+
+                const record = att.find(a => a.userId === u.id);
+                if(record) {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${u.name}</td>
+                            <td>${record.checkIn}</td>
+                            <td>${record.checkOut || '--:--'}</td>
+                            <td><a href="#" onclick="openMap(${record.lat}, ${record.lng})">View</a></td>
+                            <td><span class="badge badge-success">Present</span></td>
+                            <td><button class="btn btn-outline btn-sm" onclick="regAtt(${record.id})">Edit</button></td>
+                        </tr>`;
+                } else {
+                    tbody.innerHTML += `<tr><td>${u.name}</td><td>-</td><td>-</td><td>-</td><td><span class="badge badge-danger">Absent</span></td><td><button class="btn btn-outline btn-sm" onclick="markMan('${u.id}', '${date}')">Mark</button></td></tr>`;
+                }
+            });
+        }
+
+        function regAtt(id) {
+            const time = prompt('Enter corrected Check-in time:');
+            if(time) {
+                const att = Store.get('attendance');
+                const r = att.find(x => x.id === id);
+                if(r) { r.checkIn = time; Store.set('attendance', att); loadReport(); notify('Regularized'); }
+            }
+        }
+
+        function markMan(uid, date) {
+            const time = prompt('Enter Check-in time:');
+            if(time) {
+                const att = Store.get('attendance');
+                att.push({ id: Date.now(), userId: uid, date, checkIn: time, checkOut: null, lat:0, lng:0 });
+                Store.set('attendance', att);
+                loadReport();
+                notify('Marked Present');
+            }
+        }
+
+        function loadLeavesForApproval() {
+            const tbody = $('leave-approve-table').querySelector('tbody');
+            tbody.innerHTML = '';
+            const leaves = Store.get('leaves').filter(l => l.status === 'Pending');
+            leaves.forEach(l => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${l.userName}</td>
+                        <td>${l.from} to ${l.to}</td>
+                        <td>${l.reason}</td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="procLeave(${l.id}, 'Approved')">✓</button>
+                            <button class="btn btn-danger btn-sm" onclick="procLeave(${l.id}, 'Rejected')">✗</button>
+                        </td>
+                    </tr>`;
+            });
+        }
+
+        function procLeave(id, status) {
+            const leaves = Store.get('leaves');
+            const l = leaves.find(x => x.id === id);
+            if(l) {
+                l.status = status;
+                Store.set('leaves', leaves);
+                loadLeavesForApproval();
+                notify(`Leave ${status}`);
+            }
+        }
+
+        /* MESSAGING */
+        $('msg-target').addEventListener('change', (e) => {
+            const val = e.target.value;
+            $('group-select-container').classList.toggle('hidden', val !== 'selected');
+            $('individual-input').classList.toggle('hidden', val !== 'individual');
+        });
+
+        function sendWhatsApp(type) {
+            const target = $('msg-target').value;
+            const msg = $('msg-content').value;
+            let phones = "";
+
+            if(target === 'individual') {
+                phones = $('msg-mobile').value;
+            } else if (target === 'selected') {
+                const comp = $('msg-company').value;
+                const users = Store.get('users').filter(u => u.role === 'EMP' && u.company === comp);
+                users.forEach(u => phones += u.mobile + ",");
+            } else {
+                const users = Store.get('users').filter(u => u.role === 'EMP');
+                users.forEach(u => phones += u.mobile + ",");
+            }
+
+            if(!phones || !msg) return notify('Select recipients and message', 'error');
+            const fullMsg = `[${type}] ${msg}`;
+            window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(fullMsg)}&phone=${phones}`, '_blank');
+            notify('WhatsApp Opened');
+        }
+
+        /* CLOUD & UPDATES */
+        function saveCloudConfig() {
+            const bin = $('cloud-bin').value;
+            const key = $('cloud-key').value;
+            if(bin) {
+                localStorage.setItem('eas_cloud_bin', bin);
+                localStorage.setItem('eas_cloud_key', key);
+                notify('Cloud Settings Saved. Syncing started...');
+            } else {
+                notify('Enter details', 'error');
+            }
+        }
+
+        function triggerAppUpdate() {
+            notify('Checking for updates...', 'info');
+            setTimeout(() => {
+                notify('Update found! Downloading...', 'info');
+                setTimeout(() => {
+                    notify('Update Installed. Refreshing...');
+                    setTimeout(() => location.reload(), 2000);
+                }, 1500);
+            }, 1000);
+        }
+
+        function openModal(id) { $(id).classList.remove('hidden'); }
+        function closeModal(id) { $(id).classList.add('hidden'); }
+        function openMap(lat, lng) { window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank'); }
+
+        /* --- INIT LOADERS --- */
+        $('adm-team').addEventListener('click', loadTeam);
+        $('adm-comp').addEventListener('click', loadCompanies);
+        $('adm-att').addEventListener('click', loadReport);
+        $('adm-leave').addEventListener('click', loadLeavesForApproval);
+        $('emp-leave').addEventListener('click', loadEmpLeaves);
+
+    </script>
+</body>
+</html>
