@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EAS Cloud - Status Fix</title>
+    <title>EAS Cloud - Updated Keys</title>
     
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -198,7 +198,7 @@
             <div class="text-center mb-4">
                 <i class="fa-solid fa-cloud fa-3x" style="color:var(--primary); margin-bottom:1rem;"></i>
                 <h2>EAS Cloud</h2>
-                <span id="version-display" class="version-badge">v2.11.0</span>
+                <span id="version-display" class="version-badge">v2.12.0</span>
             </div>
             
             <form id="login-form" onsubmit="handleLogin(event)">
@@ -501,11 +501,11 @@
     <!-- Application Logic -->
     <script>
         /* --- CONFIG & CREDENTIALS --- */
-        const APP_VERSION = "v2.11.0-LOGIN-STATUS";
+        const APP_VERSION = "v2.12.0-UPDATED-KEYS";
         
-        // HARDCODED CREDENTIALS
+        // UPDATED CREDENTIALS AS REQUESTED
         let CLOUD_CONFIG = {
-            binId: "6989e18c43b1c97be971bb47", 
+            binId: "6989fe3fae596e708f1dd133", 
             masterKey: "$2a$10$31RRwjp5GFNYo/puv4Q/wOln3poLiM/SM3lXde69LjAIKizHfzYSe"
         };
 
@@ -1079,6 +1079,8 @@
             const binId = CLOUD_CONFIG.binId;
             const masterKey = CLOUD_CONFIG.masterKey;
 
+            console.log("Starting Cloud Sync...");
+
             if (!binId || !masterKey) {
                 console.log("Cloud Sync Skipped: No credentials.");
                 return; 
@@ -1087,7 +1089,11 @@
             try {
                 const url = `https://api.jsonbin.io/v3/b/${binId}/latest`;
                 const response = await fetch(url, {
-                    headers: { 'Content-Type': 'application/json', 'X-Master-Key': masterKey }
+                    headers: { 
+                        'Content-Type': 'application/json', 
+                        'X-Master-Key': masterKey,
+                        'X-Bin-Meta': 'false' 
+                    }
                 });
                 const data = await response.json();
                 const record = data.record;
@@ -1098,6 +1104,23 @@
                     if(record.attendance) this.set('attendance', record.attendance);
                     if(record.leaves) this.set('leaves', record.leaves);
                     if(record.companies) this.set('companies', record.companies);
+                    
+                    // Force UI Update to Green immediately
+                    const led = $('cloud-led');
+                    const txt = $('cloud-text');
+                    const adminLed = $('admin-led-login');
+                    const adminTxt = $('admin-text-login');
+                    const genLed = $('general-led-login');
+                    const genTxt = $('general-text-login');
+
+                    const apply = (l, t) => {
+                        if(l) l.className = `led connected`;
+                        if(t) t.innerText = 'Connected';
+                    };
+                    apply(led, txt);
+                    apply(adminLed, adminTxt);
+                    apply(genLed, genTxt);
+                    
                     return true;
                 }
                 return false;
