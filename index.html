@@ -415,11 +415,17 @@
             <!-- Cloud Storage Manager (Admin) -->
             <div id="admin-view-cloud" class="hidden">
                 <div class="card">
-                    <h2>Cloud Storage Manager <button class="btn btn-sm btn-primary" onclick="openUploadModal('admin')" style="margin-left: auto;"><i class="fa-solid fa-upload"></i> Upload File</button></h2>
-                    <p class="text-xs text-muted mb-4">Admin uploads shared resources here. Employees can browse and download from the "Cloud" tab.</p>
+                    <h2>
+                        Cloud Storage Manager 
+                        <div style="display:flex; gap:5px;">
+                             <button class="btn btn-sm btn-primary" onclick="toggleActiveDrive('gdrive')" style="background: var(--info);"><i class="fa-brands fa-google-drive"></i> G-Drive</button>
+                             <button class="btn btn-sm btn-primary" onclick="toggleActiveDrive('pcloud')" style="background: var(--success);"><i class="fa-solid fa-cloud"></i> P-Cloud</button>
+                        </div>
+                    </h2>
+                    <p class="text-xs text-muted mb-4">Current Active Source: <span id="active-drive-name" class="font-bold text-accent">Google Drive</span></p>
                     
                     <div class="input-group">
-                        <label>Google Drive Link</label>
+                        <label id="active-drive-label">Active Drive Link</label>
                         <div class="flex gap-2">
                             <input type="text" id="admin-drive-link" placeholder="https://drive.google.com/..." onchange="saveGlobalSettings()">
                             <button class="btn btn-primary" style="width: auto;" onclick="window.open(document.getElementById('admin-drive-link').value, '_blank')"><i class="fa-solid fa-external-link-alt"></i></button>
@@ -428,7 +434,7 @@
 
                     <div id="admin-cloud-list" class="file-grid mt-4">
                         <!-- Files Loaded Here -->
-                        <div class="text-center text-muted w-full" style="grid-column: 1/-1;">Enter a Google Drive folder/file link above.</div>
+                        <div class="text-center text-muted w-full" style="grid-column: 1/-1;">Enter a link above or switch drive sources.</div>
                     </div>
                 </div>
             </div>
@@ -444,7 +450,6 @@
                             <div class="input-group"><label>JSON Bin ID</label><input type="text" id="cfg-bin-id" readonly value="6989fe3fae596e708f1dd133" style="opacity: 0.7;"></div>
                             <div class="input-group"><label>JSON Master Key</label><input type="password" id="cfg-master-key" readonly value="$2a$10$31RRwjp5GFNYo/puv4Q/wOln3poLiM/SM3lXde69LjAIKizHfzYSe" style="opacity: 0.7;"></div>
                             <div class="input-group"><label>ImgBB API Key</label><input type="password" id="cfg-imgbb-key" placeholder="ImgBB Key"></div>
-                            <button class="btn btn-ghost btn-sm" onclick="saveCloudSettings()"><i class="fa-solid fa-save"></i> Save Credentials</button>
                         </div>
                     </div>
 
@@ -452,19 +457,19 @@
                     
                     <!-- AUTOMATION SETTINGS -->
                     <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(245, 158, 11, 0.05);">
-                        <h3 style="color: var(--accent); margin-bottom: 15px;">🤖 Automation Engine</h3>
+                        <h3 style="color: var(--accent); margin-bottom: 15px;">🤖 WhatsApp Automation Engine</h3>
                         
                         <div class="settings-grid">
                             <div>
-                                <h4 class="text-xs text-muted mb-2">WhatsApp API Configuration</h4>
-                                <div class="input-group"><label>WhatsApp API Token</label><input type="password" id="cfg-wa-token" placeholder="Bearer Token..." onchange="saveGlobalSettings()"></div>
-                                <div class="input-group"><label>Instance ID / Phone ID</label><input type="text" id="cfg-wa-instance" placeholder="e.g. 12345678" onchange="saveGlobalSettings()"></div>
+                                <h4 class="text-xs text-muted mb-2">API Configuration</h4>
+                                <div class="input-group"><label>WhatsApp API Token</label><input type="password" id="cfg-wa-token" placeholder="Bearer Token..."></div>
+                                <div class="input-group"><label>Instance ID / Phone ID</label><input type="text" id="cfg-wa-instance" placeholder="e.g. 12345678"></div>
                             </div>
                             <div>
                                 <h4 class="text-xs text-muted mb-2">Group Links & Reminders</h4>
-                                <div class="input-group"><label>Check-in Group Link</label><input type="text" id="cfg-wa-checkin-group" placeholder="https://chat.whatsapp.com/..." onchange="saveGlobalSettings()"></div>
-                                <div class="input-group"><label>Birthday Group Link</label><input type="text" id="cfg-wa-birthday-group" placeholder="https://chat.whatsapp.com/..." onchange="saveGlobalSettings()"></div>
-                                <div class="input-group"><label>Auto-Checkin Time</label><input type="time" id="cfg-checkin-time" value="09:30" onchange="saveGlobalSettings()"></div>
+                                <div class="input-group"><label>Check-in Group Link</label><input type="text" id="cfg-wa-checkin-group" placeholder="https://chat.whatsapp.com/..."></div>
+                                <div class="input-group"><label>Birthday Group Link</label><input type="text" id="cfg-wa-birthday-group" placeholder="https://chat.whatsapp.com/..."></div>
+                                <div class="input-group"><label>Auto-Checkin Time</label><input type="time" id="cfg-checkin-time" value="09:30"></div>
                             </div>
                         </div>
                     </div>
@@ -473,19 +478,62 @@
 
                     <!-- CLOUD DRIVE LINK SETTINGS -->
                     <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(59, 130, 246, 0.05);">
-                        <h3 style="color: var(--info); margin-bottom: 15px;">☁️ Cloud Drive Configuration</h3>
+                        <h3 style="color: var(--info); margin-bottom: 15px;">☁️ Cloud Drive Links</h3>
+                        <p class="text-xs text-muted mb-4">Configure links for both Google Drive and P-Cloud. Links are saved permanently.</p>
                         
                         <div class="settings-grid">
                             <div>
-                                <div class="input-group"><label>General Cloud Drive Link</label><input type="text" id="cfg-cloud-drive-link" placeholder="https://drive.google.com/..." onchange="saveGlobalSettings()"></div>
-                                <p class="text-xs text-muted mt-2">This link is used for general file sharing (e.g., Admin Cloud tab).</p>
+                                <div class="input-group"><label>Google Drive Link</label><input type="text" id="cfg-gdrive-link" placeholder="https://drive.google.com/..."></div>
                             </div>
                             <div>
-                                <div class="input-group"><label>Call Reports Drive Link</label><input type="text" id="cfg-call-report-link" placeholder="https://drive.google.com/..." onchange="saveGlobalSettings()"></div>
-                                <p class="text-xs text-muted mt-2">When employees upload call reports, they will be saved/linked here.</p>
+                                <div class="input-group"><label>P-Cloud Link</label><input type="text" id="cfg-pcloud-link" placeholder="https://my.pcloud.com/..."></div>
                             </div>
                         </div>
+                        
+                        <div class="input-group mt-4">
+                             <label>Default Cloud Storage</label>
+                             <select id="cfg-active-drive" class="w-full">
+                                 <option value="gdrive">Google Drive</option>
+                                 <option value="pcloud">P-Cloud</option>
+                             </select>
+                        </div>
+
+                        <div style="margin-top: 24px; text-align: right;">
+                            <button class="btn btn-primary" onclick="saveGlobalSettings()" style="width: auto; padding-left: 30px; padding-right: 30px;">
+                                <i class="fa-solid fa-save"></i> Save All Settings
+                            </button>
+                        </div>
                     </div>
+
+                    <div style="height: 1px; background: var(--border); margin: 24px 0;"></div>
+
+                    <!-- CALL REPORT UPLOAD SETTINGS -->
+                    <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(168, 85, 247, 0.05);">
+                        <h3 style="color: var(--purple); margin-bottom: 15px;">📂 Call Report Upload Configuration</h3>
+                        <p class="text-xs text-muted mb-4">Define where employees upload call reports and the target Gmail ID.</p>
+                        
+                        <div class="settings-grid">
+                            <div>
+                                <div class="input-group"><label>Target Gmail ID</label><input type="email" id="cfg-call-report-email" placeholder="reports@company.com"></div>
+                                <p class="text-xs text-muted mt-2">Reports will be sent to this address.</p>
+                            </div>
+                            <div>
+                                <div class="input-group"><label>Upload Destination</label>
+                                    <select id="cfg-call-report-dest">
+                                        <option value="gdrive">Google Drive</option>
+                                        <option value="pcloud">P-Cloud</option>
+                                    </select>
+                                </div>
+                                <p class="text-xs text-muted mt-2">Employees will be prompted to upload to this location.</p>
+                            </div>
+                        </div>
+                         <div style="margin-top: 24px; text-align: right;">
+                            <button class="btn btn-primary" onclick="saveCallReportSettings()" style="width: auto; padding-left: 30px; padding-right: 30px;">
+                                <i class="fa-solid fa-save"></i> Save Report Settings
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </section>
@@ -536,9 +584,9 @@
             <!-- Call Tab View -->
             <div id="emp-view-call" class="hidden">
                 <div class="card">
-                    <h2>Field Call Update <button class="btn btn-sm btn-primary" onclick="openCallModal()" style="margin-left: auto;"><i class="fa-solid fa-plus"></i> New Call</button></h2>
+                    <h2>Field Call Update <button class="btn btn-sm btn-primary" onclick="openCallModal()" style="margin-left: auto;"><i class="fa-solid fa-plus"></i> Upload Report</button></h2>
                     <div id="call-list" class="list-container mt-4">
-                        <div class="p-3 text-center text-muted">No call records yet.</div>
+                        <div class="p-3 text-center text-muted">No call reports found.</div>
                     </div>
                 </div>
             </div>
@@ -577,11 +625,11 @@
             <!-- Cloud Storage View (Employee) -->
             <div id="emp-view-cloud" class="hidden">
                 <div class="card">
-                    <h2>Cloud Storage</h2>
-                    <p class="text-xs text-muted mb-4">Browse shared resources.</p>
+                    <h2>Cloud Storage <span class="badge online" style="margin-left:auto;" id="emp-active-drive-badge">G-Drive</span></h2>
+                    <p class="text-xs text-muted mb-4">Shared resources from Admin.</p>
                     
                     <div class="input-group">
-                        <label>Google Drive Link</label>
+                        <label id="emp-drive-label">Link</label>
                         <div class="flex gap-2">
                             <input type="text" id="emp-drive-link" placeholder="https://drive.google.com/..." readonly>
                             <button class="btn btn-primary" style="width: auto;" onclick="window.open(document.getElementById('emp-drive-link').value, '_blank')"><i class="fa-brands fa-google-drive"></i> Open</button>
@@ -625,24 +673,25 @@
     <!-- Call Modal -->
     <div id="callModal" class="modal-overlay">
         <div class="modal-content">
-            <h2>New Field Call</h2>
+            <h2>Upload Call Report</h2>
+            <p class="text-xs text-muted mb-4">Upload link to: <span id="call-modal-target-email" class="text-accent font-bold">admin@company.com</span></p>
+            
             <div class="input-group"><label>Complain Number</label><input type="text" id="call-comp-no"></div>
             <div class="input-group"><label>Date</label><input type="date" id="call-date"></div>
             <div class="input-group"><label>Remark</label><textarea id="call-remark" rows="3"></textarea></div>
             
-            <!-- Added Drive Link Input -->
+            <!-- Upload Link Only -->
             <div class="input-group">
-                <label>Upload Report (Google Drive Link)</label>
+                <label>Upload Report Link (Drive/P-Cloud)</label>
                 <div class="flex gap-2">
-                    <input type="text" id="call-drive-link" placeholder="Paste Drive Link here">
-                    <button class="btn btn-ghost" onclick="window.open('https://drive.google.com/', '_blank')" style="width:auto;"><i class="fa-brands fa-google-drive"></i> Drive</button>
+                    <input type="text" id="call-drive-link" placeholder="Paste Report Link here">
+                    <button class="btn btn-primary" style="width: auto;" onclick="window.open('https://drive.google.com/', '_blank')"><i class="fa-brands fa-google-drive"></i> Drive</button>
+                    <button class="btn btn-success" style="width: auto;" onclick="window.open('https://my.pcloud.com/', '_blank')"><i class="fa-solid fa-cloud"></i> P-Cloud</button>
                 </div>
             </div>
 
-            <div class="input-group"><label>Upload Local File (Optional)</label><input type="file" id="call-file" accept="image/*,application/pdf"></div>
-            
             <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="saveCallRecord()">Save Record</button>
+                <button class="btn btn-primary w-full" onclick="saveCallRecord()">Upload Report</button>
                 <button class="btn btn-ghost w-full" onclick="closeModal('callModal')">Cancel</button>
             </div>
         </div>
@@ -743,8 +792,13 @@
                 checkInTime: "09:30",
                 
                 // Drive Settings
-                driveLink: "",
-                callReportDriveLink: ""
+                gdriveLink: "",
+                pcloudLink: "",
+                activeDrive: "gdrive", // 'gdrive' or 'pcloud'
+                
+                // Call Report Settings
+                callReportEmail: "admin@company.com",
+                callReportDest: "gdrive" // 'gdrive' or 'pcloud'
             }
         };
 
@@ -965,8 +1019,12 @@
             document.getElementById('call-comp-no').value = '';
             document.getElementById('call-date').value = '';
             document.getElementById('call-remark').value = '';
-            document.getElementById('call-drive-link').value = ''; // Reset
-            document.getElementById('call-file').value = '';
+            document.getElementById('call-drive-link').value = ''; 
+            
+            // Show Target Email
+            const email = APP.db.settings.callReportEmail || "Not Configured";
+            document.getElementById('call-modal-target-email').textContent = email;
+            
             document.getElementById('callModal').classList.add('open');
         }
 
@@ -975,36 +1033,25 @@
             const date = document.getElementById('call-date').value;
             const remark = document.getElementById('call-remark').value;
             const driveLink = document.getElementById('call-drive-link').value; // Get Drive Link
-            const fileInput = document.getElementById('call-file');
-            if(!compNo || !date) return showToast("Fields required", "error");
             
-            let fileUrl = "";
-            let fileName = "";
-
-            // Simulating file upload by storing a fake path/link since Drive API is removed
-            if(fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                fileName = file.name;
-                fileUrl = URL.createObjectURL(file); // Local temporary URL
-                showToast("Local File Attached", "success");
-            }
-
+            if(!compNo || !date) return showToast("Fields required", "error");
+            if(!driveLink) return showToast("Report Link is required", "error");
+            
             APP.db.calls.push({
                 id: Date.now(),
                 empId: APP.user.id,
+                empName: APP.user.name,
                 compNo: compNo,
                 date: date,
                 remark: remark,
                 driveLink: driveLink, // Save Drive Link
-                fileName: fileName,
-                fileUrl: fileUrl,
                 timestamp: new Date().toISOString()
             });
 
             saveData();
             renderCallList();
             closeModal('callModal');
-            showToast("Call Record Saved", "success");
+            showToast("Call Report Uploaded", "success");
         }
 
         function renderCallList() {
@@ -1022,26 +1069,47 @@
                             <div class="text-xs text-muted">${c.date} | ${c.remark}</div>
                         </div>
                     </div>
-                    ${c.driveLink ? `<a href="${c.driveLink}" target="_blank" class="btn btn-sm btn-primary" style="background:var(--info)"><i class="fa-brands fa-google-drive"></i> Drive</a>` : ''}
-                    ${c.fileUrl ? `<a href="${c.fileUrl}" target="_blank" class="btn btn-sm btn-ghost"><i class="fa-solid fa-file-pdf"></i> File</a>` : ''}
+                    <!-- Download Button -->
+                    <a href="${c.driveLink}" target="_blank" class="btn btn-sm btn-primary" style="background:var(--info); width: auto;">
+                        <i class="fa-solid fa-download"></i> Download
+                    </a>
                 </div>
             `).join('');
         }
 
         // --- DRIVE LINK LOGIC ---
         function uploadAdminFile() {
-            // Since we removed Drive API, this function just updates the shared link
-            // In a real app without API, you might paste the URL.
-            // For now, let's assume the user enters the link in the input field manually.
             closeModal('uploadModal');
             showToast("Please enter the link in the Cloud Drive Link field.", "info");
         }
 
         function loadAdminCloudFiles() {
-            // Updates employee view when link changes
-            const link = APP.db.settings.driveLink;
+            updateCloudDisplay(); 
+        }
+
+        // New: Toggle between G-Drive and P-Cloud
+        function toggleActiveDrive(driveType) {
+            APP.db.settings.activeDrive = driveType;
+            saveData();
+            updateCloudDisplay();
+            showToast(`Switched to ${driveType === 'gdrive' ? 'Google Drive' : 'P-Cloud'}`, "info");
+        }
+
+        function updateCloudDisplay() {
+            const active = APP.db.settings.activeDrive || 'gdrive';
+            const link = active === 'gdrive' ? APP.db.settings.gdriveLink : APP.db.settings.pcloudLink;
+            const label = active === 'gdrive' ? 'Google Drive Link' : 'P-Cloud Link';
+            const name = active === 'gdrive' ? 'Google Drive' : 'P-Cloud';
+            
+            // Update Admin Cloud Tab
             document.getElementById('admin-drive-link').value = link || "";
+            document.getElementById('active-drive-label').textContent = label;
+            document.getElementById('active-drive-name').textContent = name;
+            
+            // Update Employee Cloud Tab
             document.getElementById('emp-drive-link').value = link || "";
+            document.getElementById('emp-drive-label').textContent = label;
+            document.getElementById('emp-active-drive-badge').textContent = active === 'gdrive' ? 'G-Drive' : 'P-Cloud';
         }
 
         // --- EMPLOYEE ADVANCE & LEAVE LOGIC ---
@@ -1146,7 +1214,7 @@
             document.querySelectorAll('#admin-panel > div').forEach(d => d.classList.add('hidden'));
             document.getElementById(`admin-view-${tab}`).classList.remove('hidden');
             if(tab === 'dashboard') setTimeout(initMap, 100);
-            if(tab === 'cloud') loadAdminCloudFiles();
+            if(tab === 'cloud') updateCloudDisplay();
         }
 
         function switchEmpTab(tab, btn) {
@@ -1156,7 +1224,7 @@
             document.getElementById(`emp-view-${tab}`).classList.remove('hidden');
             if(tab === 'call') renderCallList();
             if(tab === 'chat') loadEmpChatContacts();
-            if(tab === 'cloud') loadAdminCloudFiles(); // Syncs the drive link
+            if(tab === 'cloud') updateCloudDisplay(); // Syncs the drive link
         }
 
         function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -1168,15 +1236,27 @@
             setTimeout(() => t.remove(), 3000);
         }
         function saveGlobalSettings() {
+            // Save WA Settings
             APP.db.settings.waToken = document.getElementById('cfg-wa-token').value;
             APP.db.settings.waInstanceId = document.getElementById('cfg-wa-instance').value;
             APP.db.settings.waCheckInGroup = document.getElementById('cfg-wa-checkin-group').value;
             APP.db.settings.waBirthdayGroup = document.getElementById('cfg-wa-birthday-group').value;
             APP.db.settings.checkInTime = document.getElementById('cfg-checkin-time').value;
-            APP.db.settings.driveLink = document.getElementById('cfg-drive-link').value;
-            APP.db.settings.callReportDriveLink = document.getElementById('cfg-call-report-link').value; // Save new setting
+            
+            // Save Cloud Settings
+            APP.db.settings.gdriveLink = document.getElementById('cfg-gdrive-link').value;
+            APP.db.settings.pcloudLink = document.getElementById('cfg-pcloud-link').value;
+            APP.db.settings.activeDrive = document.getElementById('cfg-active-drive').value;
+            
+            updateCloudDisplay();
             saveData();
-            showToast("Settings Saved");
+            showToast("All Settings Saved Permanently");
+        }
+        function saveCallReportSettings() {
+             APP.db.settings.callReportEmail = document.getElementById('cfg-call-report-email').value;
+             APP.db.settings.callReportDest = document.getElementById('cfg-call-report-dest').value;
+             saveData();
+             showToast("Call Report Settings Saved");
         }
         function renderUI() {
             if(APP.user && APP.user.role === 'admin') renderAdminDashboard();
@@ -1211,9 +1291,17 @@
              document.getElementById('cfg-wa-checkin-group').value = APP.db.settings.waCheckInGroup || "";
              document.getElementById('cfg-wa-birthday-group').value = APP.db.settings.waBirthdayGroup || "";
              document.getElementById('cfg-checkin-time').value = APP.db.settings.checkInTime || "09:30";
-             document.getElementById('admin-drive-link').value = APP.db.settings.driveLink || "";
-             document.getElementById('cfg-cloud-drive-link').value = APP.db.settings.driveLink || "";
-             document.getElementById('cfg-call-report-link').value = APP.db.settings.callReportDriveLink || "";
+             
+             document.getElementById('cfg-gdrive-link').value = APP.db.settings.gdriveLink || "";
+             document.getElementById('cfg-pcloud-link').value = APP.db.settings.pcloudLink || "";
+             document.getElementById('cfg-active-drive').value = APP.db.settings.activeDrive || "gdrive";
+             
+             // Call Report Settings
+             document.getElementById('cfg-call-report-email').value = APP.db.settings.callReportEmail || "";
+             document.getElementById('cfg-call-report-dest').value = APP.db.settings.callReportDest || "gdrive";
+             
+             // Initialize Display
+             updateCloudDisplay();
         }
         function openAdminProfileModal() { alert("Profile Modal"); }
         function openEmpModal() { alert("Employee Modal"); }
