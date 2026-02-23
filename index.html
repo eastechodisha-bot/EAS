@@ -268,7 +268,6 @@
                             <input type="password" id="password" placeholder="Password" required style="text-align: center; font-size: 1.1rem;">
                         </div>
                         <button type="submit" class="btn btn-primary mt-4">Authenticate</button>
-                        <div style="margin-top: 16px; font-size: 0.75rem; color: var(--fg-muted);">Default: admin / admin</div>
                     </form>
                 </div>
             </div>
@@ -420,16 +419,16 @@
                     <p class="text-xs text-muted mb-4">Admin uploads shared resources here. Employees can browse and download from the "Cloud" tab.</p>
                     
                     <div class="input-group">
-                        <label>Current Folder</label>
-                        <div class="flex items-center gap-2 p-2 bg-black/20 rounded">
-                            <i class="fa-solid fa-folder text-accent"></i> 
-                            <span>/NexusHR/CloudStorage</span>
+                        <label>Google Drive Link</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="admin-drive-link" placeholder="https://drive.google.com/..." onchange="saveGlobalSettings()">
+                            <button class="btn btn-primary" style="width: auto;" onclick="window.open(document.getElementById('admin-drive-link').value, '_blank')"><i class="fa-solid fa-external-link-alt"></i></button>
                         </div>
                     </div>
 
                     <div id="admin-cloud-list" class="file-grid mt-4">
                         <!-- Files Loaded Here -->
-                        <div class="text-center text-muted w-full" style="grid-column: 1/-1;">Loading files...</div>
+                        <div class="text-center text-muted w-full" style="grid-column: 1/-1;">Enter a Google Drive folder/file link above.</div>
                     </div>
                 </div>
             </div>
@@ -450,47 +449,40 @@
                     </div>
 
                     <div style="height: 1px; background: var(--border); margin: 24px 0;"></div>
-
-                    <!-- GOOGLE DRIVE SETTINGS -->
-                    <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(59, 130, 246, 0.05);">
-                        <h3 style="color: var(--info); margin-bottom: 15px;">☁️ Google Drive Integration</h3>
-                        <p class="text-xs text-muted mb-4">Required for Call Reports and Cloud Storage.</p>
+                    
+                    <!-- AUTOMATION SETTINGS -->
+                    <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(245, 158, 11, 0.05);">
+                        <h3 style="color: var(--accent); margin-bottom: 15px;">🤖 Automation Engine</h3>
                         
                         <div class="settings-grid">
                             <div>
-                                <div class="input-group"><label>Drive Client ID</label><input type="text" id="cfg-drive-client-id" placeholder="Client ID" onchange="saveGlobalSettings()"></div>
-                                <div class="input-group"><label>Drive API Key</label><input type="password" id="cfg-drive-api-key" placeholder="API Key" onchange="saveGlobalSettings()"></div>
+                                <h4 class="text-xs text-muted mb-2">WhatsApp API Configuration</h4>
+                                <div class="input-group"><label>WhatsApp API Token</label><input type="password" id="cfg-wa-token" placeholder="Bearer Token..." onchange="saveGlobalSettings()"></div>
+                                <div class="input-group"><label>Instance ID / Phone ID</label><input type="text" id="cfg-wa-instance" placeholder="e.g. 12345678" onchange="saveGlobalSettings()"></div>
                             </div>
                             <div>
-                                <button id="btn-drive-connect" class="btn btn-primary" onclick="connectDrive()" style="margin-top: 24px;">
-                                    <i class="fa-brands fa-google-drive"></i> Connect Google Drive
-                                </button>
-                                <p id="drive-status" class="text-xs text-muted mt-2">Status: Not Connected</p>
+                                <h4 class="text-xs text-muted mb-2">Group Links & Reminders</h4>
+                                <div class="input-group"><label>Check-in Group Link</label><input type="text" id="cfg-wa-checkin-group" placeholder="https://chat.whatsapp.com/..." onchange="saveGlobalSettings()"></div>
+                                <div class="input-group"><label>Birthday Group Link</label><input type="text" id="cfg-wa-birthday-group" placeholder="https://chat.whatsapp.com/..." onchange="saveGlobalSettings()"></div>
+                                <div class="input-group"><label>Auto-Checkin Time</label><input type="time" id="cfg-checkin-time" value="09:30" onchange="saveGlobalSettings()"></div>
                             </div>
                         </div>
                     </div>
-
-                    <div style="height: 1px; background: var(--border); margin: 24px 0;"></div>
                     
-                    <!-- MODULE 4 SETTINGS -->
-                    <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(245, 158, 11, 0.05);">
-                        <h3 style="color: var(--accent); margin-bottom: 15px;">🤖 Module 4: Reminder Engine</h3>
+                    <div style="height: 1px; background: var(--border); margin: 24px 0;"></div>
+
+                    <!-- CLOUD DRIVE LINK SETTINGS -->
+                    <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(59, 130, 246, 0.05);">
+                        <h3 style="color: var(--info); margin-bottom: 15px;">☁️ Cloud Drive Configuration</h3>
+                        
                         <div class="settings-grid">
                             <div>
-                                <div class="input-group"><label>Enable Auto-Reminder</label>
-                                    <label class="toggle-switch" style="float: right;">
-                                        <input type="checkbox" id="cfg-reminder-enabled" onchange="saveGlobalSettings()">
-                                        <span class="toggle-slider"></span>
-                                    </label>
-                                </div>
-                                <div class="input-group"><label>Reminder Time</label><input type="time" id="cfg-reminder-time" value="09:30" onchange="saveGlobalSettings()"></div>
-                                <div class="input-group"><label>WhatsApp Token</label><input type="password" id="cfg-wa-token" placeholder="Bearer Token..." onchange="saveGlobalSettings()"></div>
+                                <div class="input-group"><label>General Cloud Drive Link</label><input type="text" id="cfg-cloud-drive-link" placeholder="https://drive.google.com/..." onchange="saveGlobalSettings()"></div>
+                                <p class="text-xs text-muted mt-2">This link is used for general file sharing (e.g., Admin Cloud tab).</p>
                             </div>
                             <div>
-                                <h4 class="text-xs text-muted mb-2">Google Calendar</h4>
-                                <div class="input-group"><label>Admin Gmail</label><input type="email" id="cfg-admin-email" value="eas.techodisha@gmail.com" readonly style="opacity: 0.7;"></div>
-                                <button id="btn-google-connect" class="btn btn-primary mt-2" onclick="connectGoogle()"><i class="fa-brands fa-google"></i> Connect Calendar</button>
-                                <p id="google-status" class="text-xs text-muted mt-1">Status: Not Connected</p>
+                                <div class="input-group"><label>Call Reports Drive Link</label><input type="text" id="cfg-call-report-link" placeholder="https://drive.google.com/..." onchange="saveGlobalSettings()"></div>
+                                <p class="text-xs text-muted mt-2">When employees upload call reports, they will be saved/linked here.</p>
                             </div>
                         </div>
                     </div>
@@ -586,10 +578,18 @@
             <div id="emp-view-cloud" class="hidden">
                 <div class="card">
                     <h2>Cloud Storage</h2>
-                    <p class="text-xs text-muted mb-4">Browse and download files shared by Admin.</p>
+                    <p class="text-xs text-muted mb-4">Browse shared resources.</p>
                     
+                    <div class="input-group">
+                        <label>Google Drive Link</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="emp-drive-link" placeholder="https://drive.google.com/..." readonly>
+                            <button class="btn btn-primary" style="width: auto;" onclick="window.open(document.getElementById('emp-drive-link').value, '_blank')"><i class="fa-brands fa-google-drive"></i> Open</button>
+                        </div>
+                    </div>
+
                     <div id="emp-cloud-list" class="file-grid mt-4">
-                        <div class="text-center text-muted w-full" style="grid-column: 1/-1;">Connect Drive in Admin Settings to view files.</div>
+                         <div class="text-center text-muted w-full" style="grid-column: 1/-1;">Waiting for Admin to configure Drive Link...</div>
                     </div>
                 </div>
             </div>
@@ -621,10 +621,6 @@
 
     <div id="toast-box" class="toast-container"></div>
 
-    <!-- Google API Client -->
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="https://accounts.google.com/gsi/client"></script>
-
     <!-- Modals -->
     <!-- Call Modal -->
     <div id="callModal" class="modal-overlay">
@@ -633,9 +629,20 @@
             <div class="input-group"><label>Complain Number</label><input type="text" id="call-comp-no"></div>
             <div class="input-group"><label>Date</label><input type="date" id="call-date"></div>
             <div class="input-group"><label>Remark</label><textarea id="call-remark" rows="3"></textarea></div>
-            <div class="input-group"><label>Upload Report (Image/PDF)</label><input type="file" id="call-file" accept="image/*,application/pdf"></div>
+            
+            <!-- Added Drive Link Input -->
+            <div class="input-group">
+                <label>Upload Report (Google Drive Link)</label>
+                <div class="flex gap-2">
+                    <input type="text" id="call-drive-link" placeholder="Paste Drive Link here">
+                    <button class="btn btn-ghost" onclick="window.open('https://drive.google.com/', '_blank')" style="width:auto;"><i class="fa-brands fa-google-drive"></i> Drive</button>
+                </div>
+            </div>
+
+            <div class="input-group"><label>Upload Local File (Optional)</label><input type="file" id="call-file" accept="image/*,application/pdf"></div>
+            
             <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="saveCallRecord()">Save & Upload to Drive</button>
+                <button class="btn btn-primary w-full" onclick="saveCallRecord()">Save Record</button>
                 <button class="btn btn-ghost w-full" onclick="closeModal('callModal')">Cancel</button>
             </div>
         </div>
@@ -647,7 +654,7 @@
             <h2>Upload File</h2>
             <div class="input-group"><label>Select File</label><input type="file" id="admin-upload-file"></div>
             <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="uploadAdminFile()">Upload to Drive</button>
+                <button class="btn btn-primary w-full" onclick="uploadAdminFile()">Save Link</button>
                 <button class="btn btn-ghost w-full" onclick="closeModal('uploadModal')">Cancel</button>
             </div>
         </div>
@@ -708,10 +715,6 @@
         const CONFIG = {
             JSON_BIN_ID: '6989fe3fae596e708f1dd133',
             JSON_BIN_KEY: '$2a$10$31RRwjp5GFNYo/puv4Q/wOln3poLiM/SM3lXde69LjAIKizHfzYSe',
-            GOOGLE_CLIENT_ID: '703562890968-n4pkv0si2apo34rahhoaq5efp5u9hlcc.apps.googleusercontent.com',
-            GOOGLE_CLIENT_SECRET: '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',
-            GOOGLE_SCOPES: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/drive',
-            DISCOVERY_DOCS: ['https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest', 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
         };
 
         const DEFAULT_DB = {
@@ -722,7 +725,7 @@
             leaves: [],
             attendance: [],
             logs: [],
-            calls: [], // { id, empId, compNo, date, remark, driveId, fileName }
+            calls: [], // { id, empId, compNo, date, remark, driveLink, fileName, fileUrl }
             messages: [],
             chats: [],
             settings: {
@@ -732,15 +735,16 @@
                 senderEmail: '',
                 trackingEnabled: true,
                 
-                // Module 4
-                reminderEnabled: false,
-                reminderTime: "09:30",
+                // Automation Settings
                 waToken: "",
-                googleToken: null,
+                waInstanceId: "",
+                waCheckInGroup: "",
+                waBirthdayGroup: "",
+                checkInTime: "09:30",
                 
-                // Drive
-                driveClientId: "",
-                driveApiKey: ""
+                // Drive Settings
+                driveLink: "",
+                callReportDriveLink: ""
             }
         };
 
@@ -749,8 +753,7 @@
             db: JSON.parse(JSON.stringify(DEFAULT_DB)),
             map: null,
             isLocalMode: false,
-            activeChatId: null,
-            tokenClient: null
+            activeChatId: null
         };
 
         // --- INIT ---
@@ -758,36 +761,8 @@
             loadSettings();
             loadData();
             startClock();
-            
-            // Google API Init
-            gapi.load('client', initGapiClient);
-            APP.tokenClient = google.accounts.oauth2.initTokenClient({
-                client_id: CONFIG.GOOGLE_CLIENT_ID,
-                scope: CONFIG.GOOGLE_SCOPES,
-                callback: handleTokenResponse
-            });
-
             document.getElementById('report-date-input').value = new Date().toISOString().split('T')[0];
         };
-
-        async function initGapiClient() {
-            await gapi.client.init({
-                apiKey: APP.db.settings.driveApiKey || 'YOUR_API_KEY', 
-                discoveryDocs: CONFIG.DISCOVERY_DOCS,
-            });
-        }
-
-        function handleTokenResponse(resp) {
-            if (resp.error !== undefined) return;
-            APP.db.settings.googleToken = gapi.client.getToken();
-            document.getElementById('google-status').textContent = "Status: Connected ✅";
-            document.getElementById('drive-status').textContent = "Status: Connected ✅";
-            document.getElementById('google-status').style.color = "var(--success)";
-            document.getElementById('btn-google-connect')?.classList.add('hidden');
-            document.getElementById('btn-drive-connect')?.classList.add('hidden');
-            saveData();
-            showToast("Google Services Connected", "success");
-        }
 
         // --- DATA & AUTH ---
         function loadData() {
@@ -990,24 +965,28 @@
             document.getElementById('call-comp-no').value = '';
             document.getElementById('call-date').value = '';
             document.getElementById('call-remark').value = '';
+            document.getElementById('call-drive-link').value = ''; // Reset
             document.getElementById('call-file').value = '';
             document.getElementById('callModal').classList.add('open');
         }
 
-        async function saveCallRecord() {
+        function saveCallRecord() {
             const compNo = document.getElementById('call-comp-no').value;
             const date = document.getElementById('call-date').value;
             const remark = document.getElementById('call-remark').value;
+            const driveLink = document.getElementById('call-drive-link').value; // Get Drive Link
             const fileInput = document.getElementById('call-file');
             if(!compNo || !date) return showToast("Fields required", "error");
             
-            let driveId = null;
+            let fileUrl = "";
             let fileName = "";
+
+            // Simulating file upload by storing a fake path/link since Drive API is removed
             if(fileInput.files.length > 0) {
                 const file = fileInput.files[0];
-                fileName = `${APP.user.name}_${Date.now()}_${file.name}`;
-                showToast("Uploading to Drive...", "info");
-                driveId = await uploadToDrive(file, 'root', fileName); // Uploading to Root for demo
+                fileName = file.name;
+                fileUrl = URL.createObjectURL(file); // Local temporary URL
+                showToast("Local File Attached", "success");
             }
 
             APP.db.calls.push({
@@ -1016,8 +995,9 @@
                 compNo: compNo,
                 date: date,
                 remark: remark,
-                driveId: driveId,
+                driveLink: driveLink, // Save Drive Link
                 fileName: fileName,
+                fileUrl: fileUrl,
                 timestamp: new Date().toISOString()
             });
 
@@ -1042,97 +1022,26 @@
                             <div class="text-xs text-muted">${c.date} | ${c.remark}</div>
                         </div>
                     </div>
-                    ${c.driveId ? `<a href="https://drive.google.com/file/d/${c.driveId}/view" target="_blank" class="btn btn-sm btn-ghost"><i class="fa-solid fa-file-pdf"></i> View</a>` : '<span class="badge pending">No File</span>'}
+                    ${c.driveLink ? `<a href="${c.driveLink}" target="_blank" class="btn btn-sm btn-primary" style="background:var(--info)"><i class="fa-brands fa-google-drive"></i> Drive</a>` : ''}
+                    ${c.fileUrl ? `<a href="${c.fileUrl}" target="_blank" class="btn btn-sm btn-ghost"><i class="fa-solid fa-file-pdf"></i> File</a>` : ''}
                 </div>
             `).join('');
         }
 
-        // --- DRIVE INTEGRATION ---
-        function connectDrive() {
-            if(!APP.db.settings.driveClientId) return showToast("Enter Drive Client ID in settings first", "error");
-            if (gapi.client.getToken() === null) {
-                APP.tokenClient.requestAccessToken({prompt: 'consent'});
-            } else {
-                APP.db.settings.googleToken = gapi.client.getToken();
-                document.getElementById('drive-status').textContent = "Status: Connected ✅";
-                saveData();
-            }
+        // --- DRIVE LINK LOGIC ---
+        function uploadAdminFile() {
+            // Since we removed Drive API, this function just updates the shared link
+            // In a real app without API, you might paste the URL.
+            // For now, let's assume the user enters the link in the input field manually.
+            closeModal('uploadModal');
+            showToast("Please enter the link in the Cloud Drive Link field.", "info");
         }
 
-        async function uploadToDrive(file, folderPath, fileName) {
-            if(!APP.db.settings.googleToken) { showToast("Google Drive not connected", "error"); return null; }
-            try {
-                const metadata = { 'name': fileName, 'parents': [folderPath] };
-                const form = new FormData();
-                form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-                form.append('file', file);
-                const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-                    method: 'POST',
-                    headers: new Headers({ 'Authorization': 'Bearer ' + APP.db.settings.googleToken.access_token }),
-                    body: form
-                });
-                const data = await response.json();
-                return data.id;
-            } catch(e) {
-                console.error(e);
-                showToast("Drive Upload Failed", "error");
-                return null;
-            }
-        }
-
-        async function listDriveFiles(folderId) {
-            if(!APP.db.settings.googleToken) return [];
-            try {
-                const response = await gapi.client.drive.files.list({
-                    'q': `'${folderId}' in parents and trashed=false`,
-                    'fields': "files(id,name,webViewLink, mimeType)"
-                });
-                return response.result.files;
-            } catch(e) { return []; }
-        }
-
-        async function uploadAdminFile() {
-            const fileInput = document.getElementById('admin-upload-file');
-            if(fileInput.files.length === 0) return;
-            const file = fileInput.files[0];
-            showToast("Uploading...", "info");
-            const id = await uploadToDrive(file, 'root', `Admin_${file.name}`);
-            if(id) {
-                showToast("File Uploaded", "success");
-                closeModal('uploadModal');
-                loadAdminCloudFiles();
-            }
-        }
-
-        async function loadAdminCloudFiles() {
-            const grid = document.getElementById('admin-cloud-list');
-            if(!APP.db.settings.googleToken) {
-                grid.innerHTML = '<div class="text-center text-muted w-full">Drive not connected in Settings.</div>';
-                return;
-            }
-            grid.innerHTML = '<div class="text-center text-muted">Loading...</div>';
-            const files = await listDriveFiles('root');
-            grid.innerHTML = files.map(f => `
-                <div class="file-item" onclick="window.open('${f.webViewLink}', '_blank')">
-                    <i class="file-icon ${f.mimeType.includes('pdf') ? 'fa-file-pdf' : 'fa-file'}"></i>
-                    <div class="file-name">${f.name}</div>
-                </div>
-            `).join('');
-        }
-
-        async function loadEmpCloudFiles() {
-            const grid = document.getElementById('emp-cloud-list');
-            if(!APP.db.settings.googleToken) {
-                grid.innerHTML = '<div class="text-center text-muted">Drive not connected by Admin.</div>';
-                return;
-            }
-            const files = await listDriveFiles('root');
-            grid.innerHTML = files.map(f => `
-                <div class="file-item" onclick="window.open('${f.webViewLink}', '_blank')">
-                    <i class="file-icon ${f.mimeType.includes('pdf') ? 'fa-file-pdf' : 'fa-file'}"></i>
-                    <div class="file-name">${f.name}</div>
-                </div>
-            `).join('');
+        function loadAdminCloudFiles() {
+            // Updates employee view when link changes
+            const link = APP.db.settings.driveLink;
+            document.getElementById('admin-drive-link').value = link || "";
+            document.getElementById('emp-drive-link').value = link || "";
         }
 
         // --- EMPLOYEE ADVANCE & LEAVE LOGIC ---
@@ -1180,7 +1089,7 @@
         function showMyLeaves() {
             const list = document.getElementById('my-leave-list');
             const mine = APP.db.leaves.filter(l => l.empId === APP.user.id).reverse();
-            list.innerHTML = mine.map(l => `<div class="list-item" style="padding: 8px 12px;"><div class="flex justify-between w-full"><span>${l.type}</span><span class="badge ${l.status.toLowerCase()}">${l.status}</span></div><div class="text-xs text-muted">${l.start} to ${l.end}</div></div>`).join('');
+            list.innerHTML = mine.map(l => `<div class="list-item" style="padding: 8px 12px;"><div class="flex justify-between w-full"><span>${l.type}</span><span class="badge ${l.status.toLowerCase()}">${a.status}</span></div><div class="text-xs text-muted">${l.start} to ${l.end}</div></div>`).join('');
         }
 
         // --- ADMIN UI HELPERS ---
@@ -1247,7 +1156,7 @@
             document.getElementById(`emp-view-${tab}`).classList.remove('hidden');
             if(tab === 'call') renderCallList();
             if(tab === 'chat') loadEmpChatContacts();
-            if(tab === 'cloud') loadEmpCloudFiles();
+            if(tab === 'cloud') loadAdminCloudFiles(); // Syncs the drive link
         }
 
         function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -1259,15 +1168,16 @@
             setTimeout(() => t.remove(), 3000);
         }
         function saveGlobalSettings() {
-            APP.db.settings.driveClientId = document.getElementById('cfg-drive-client-id').value;
-            APP.db.settings.driveApiKey = document.getElementById('cfg-drive-api-key').value;
-            APP.db.settings.reminderEnabled = document.getElementById('cfg-reminder-enabled').checked;
-            APP.db.settings.reminderTime = document.getElementById('cfg-reminder-time').value;
             APP.db.settings.waToken = document.getElementById('cfg-wa-token').value;
+            APP.db.settings.waInstanceId = document.getElementById('cfg-wa-instance').value;
+            APP.db.settings.waCheckInGroup = document.getElementById('cfg-wa-checkin-group').value;
+            APP.db.settings.waBirthdayGroup = document.getElementById('cfg-wa-birthday-group').value;
+            APP.db.settings.checkInTime = document.getElementById('cfg-checkin-time').value;
+            APP.db.settings.driveLink = document.getElementById('cfg-drive-link').value;
+            APP.db.settings.callReportDriveLink = document.getElementById('cfg-call-report-link').value; // Save new setting
             saveData();
             showToast("Settings Saved");
         }
-        function connectGoogle() { /* Handled by GSI token client callback */ }
         function renderUI() {
             if(APP.user && APP.user.role === 'admin') renderAdminDashboard();
             if(APP.user && APP.user.role !== 'admin') renderEmployeeDashboard();
@@ -1294,7 +1204,17 @@
         }
         function toggleLocalMode(c) { APP.isLocalMode = c.checked; document.body.classList.toggle('local-mode'); }
         function manualSync() { loadData(); }
-        function loadSettings() { /* Syncs inputs with DB */ }
+        function loadSettings() { 
+             // Load inputs with DB values
+             document.getElementById('cfg-wa-token').value = APP.db.settings.waToken || "";
+             document.getElementById('cfg-wa-instance').value = APP.db.settings.waInstanceId || "";
+             document.getElementById('cfg-wa-checkin-group').value = APP.db.settings.waCheckInGroup || "";
+             document.getElementById('cfg-wa-birthday-group').value = APP.db.settings.waBirthdayGroup || "";
+             document.getElementById('cfg-checkin-time').value = APP.db.settings.checkInTime || "09:30";
+             document.getElementById('admin-drive-link').value = APP.db.settings.driveLink || "";
+             document.getElementById('cfg-cloud-drive-link').value = APP.db.settings.driveLink || "";
+             document.getElementById('cfg-call-report-link').value = APP.db.settings.callReportDriveLink || "";
+        }
         function openAdminProfileModal() { alert("Profile Modal"); }
         function openEmpModal() { alert("Employee Modal"); }
         function openMsgModal() { alert("Message Modal"); }
