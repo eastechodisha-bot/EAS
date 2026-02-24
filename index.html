@@ -3,1198 +3,1741 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nexus HR — Enterprise Command</title>
+    <title>Nexus HR — Enterprise Management</title>
     
     <!-- External Libraries -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
-    <!-- Scripts -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- JS PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Leaflet Map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
     <style>
         :root {
-            /* Theme Colors - Deep Space Dark */
-            --bg: #0a0b0d;
-            --bg-elevated: #13151a;
-            --bg-card: rgba(22, 24, 29, 0.8);
-            --fg: #f0f0f2;
-            --fg-muted: #9ca3af;
-            --fg-dim: #4b5563;
-            
-            /* Accents */
-            --accent: #f59e0b; /* Amber */
-            --accent-dim: rgba(245, 158, 11, 0.15);
-            --accent-glow: rgba(245, 158, 11, 0.4);
+            --bg-deep: #050505;
+            --bg-surface: #121212;
+            --bg-glass: rgba(20, 20, 20, 0.7);
+            --primary: #6366f1; /* Indigo */
+            --primary-glow: rgba(99, 102, 241, 0.4);
+            --accent: #d946ef; /* Fuchsia */
+            --success: #22c55e;
+            --warning: #f97316;
             --danger: #ef4444;
-            --success: #10b981;
-            --info: #3b82f6;
-            --purple: #8b5cf6;
-            
-            /* Structure */
-            --border: rgba(255, 255, 255, 0.08);
-            --border-strong: rgba(255, 255, 255, 0.15);
-            --radius: 12px;
-            --radius-lg: 20px;
-            
-            /* Typography */
+            --fg-main: #f3f4f6;
+            --fg-muted: #9ca3af;
+            --border: rgba(255, 255, 255, 0.1);
+            --radius-lg: 24px;
+            --radius-md: 12px;
             --font-display: 'Space Grotesk', sans-serif;
-            --font-ui: 'DM Sans', sans-serif;
+            --font-ui: 'Inter', sans-serif;
         }
 
-        /* Local Mode Overrides */
-        body.local-mode {
-            --bg: #0f172a; /* Darker Blue-Grey */
-            --bg-elevated: #1e293b;
-            --accent: #06b6d4; /* Cyan */
-            --accent-dim: rgba(6, 182, 212, 0.15);
-            --accent-glow: rgba(6, 182, 212, 0.4);
-        }
-
-        /* Reset & Base */
         * { margin: 0; padding: 0; box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
-        html { scroll-behavior: smooth; }
+        
         body { 
-            font-family: var(--font-ui); background: var(--bg); color: var(--fg); 
-            min-height: 100vh; overflow-x: hidden; line-height: 1.5; 
-            transition: background 0.4s ease;
+            font-family: var(--font-ui); 
+            background-color: var(--bg-deep);
+            color: var(--fg-main);
+            min-height: 100vh; overflow-x: hidden; 
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.15) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(217, 70, 239, 0.15) 0%, transparent 40%);
         }
 
-        /* Ambient Background */
-        .bg-gradient-orb { position: fixed; border-radius: 50%; filter: blur(100px); opacity: 0.25; animation: orbFloat 25s ease-in-out infinite; pointer-events: none; z-index: 0; }
-        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, var(--accent) 0%, transparent 70%); top: -150px; right: -150px; }
-        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, var(--purple) 0%, transparent 70%); bottom: -100px; left: -100px; animation-delay: -12s; }
-        @keyframes orbFloat { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-30px, 30px); } }
-
-        /* Layout */
-        .screen { position: relative; z-index: 10; min-height: 100vh; padding: 80px 16px 100px; max-width: 1000px; margin: 0 auto; }
+        /* --- UTILITIES --- */
+        .screen { position: relative; z-index: 5; padding: 80px 16px 100px; max-width: 1200px; margin: 0 auto; }
         .hidden { display: none !important; }
-        
-        /* Cards */
-        .card { background: var(--bg-card); backdrop-filter: blur(20px); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2); transition: transform 0.2s, border-color 0.2s; }
-        .card:hover { border-color: var(--border-strong); }
-
-        /* Typography */
-        h1, h2, h3, h4 { font-family: var(--font-display); color: var(--fg); font-weight: 600; letter-spacing: -0.02em; }
-        h1 { font-size: 1.8rem; }
-        h2 { font-size: 1.25rem; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-        h3 { font-size: 0.75rem; margin-bottom: 12px; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; }
-        
-        /* Buttons */
-        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border: none; border-radius: 10px; font-family: var(--font-ui); font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: all 0.2s; text-decoration: none; width: 100%; }
-        .btn-primary { background: var(--accent); color: #000; box-shadow: 0 4px 15px var(--accent-dim); }
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px var(--accent-glow); }
-        .btn-danger { background: var(--danger); color: #fff; }
-        .btn-success { background: var(--success); color: #000; }
-        .btn-ghost { background: rgba(255, 255, 255, 0.03); color: var(--fg-muted); border: 1px solid var(--border); }
-        .btn-ghost:hover { background: rgba(255, 255, 255, 0.08); color: var(--fg); }
-        .btn-sm { padding: 8px 12px; font-size: 0.8rem; border-radius: 8px; }
-
-        /* Forms */
-        .input-group { margin-bottom: 16px; }
-        .input-group label { display: block; margin-bottom: 8px; font-size: 0.75rem; font-weight: 600; color: var(--fg-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-        .input-group input, .input-group select, .input-group textarea { width: 100%; padding: 12px 14px; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--border); border-radius: 10px; color: var(--fg); font-family: var(--font-ui); font-size: 0.95rem; transition: all 0.2s; }
-        .input-group input:focus, .input-group select:focus, .input-group textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-dim); }
-        
-        /* Navigation (Bottom Dock) */
-        .tab-nav { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; padding: 8px 16px; background: rgba(10, 11, 13, 0.9); backdrop-filter: blur(24px); border-radius: 50px; z-index: 100; border: 1px solid var(--border); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); max-width: 95%; overflow-x: auto; }
-        
-        .tab-btn { 
-            width: 44px; height: 44px; 
-            border: none; background: transparent; color: var(--fg-dim); font-size: 1.1rem; 
-            cursor: pointer; border-radius: 50%; display: flex; align-items: center; justify-content: center; 
-            transition: all 0.3s; position: relative; flex-shrink: 0;
-        }
-        /* Tab Glow Effect */
-        .tab-btn::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--accent); opacity: 0; transform: scale(0.8); transition: 0.3s; z-index: -1; box-shadow: 0 0 10px var(--accent-glow); }
-        .tab-btn.active { color: #000; transform: translateY(-2px); }
-        .tab-btn.active::after { opacity: 1; transform: scale(1); box-shadow: 0 0 15px var(--accent); }
-        .tab-btn.exit-btn { color: var(--danger); margin-left: 8px; }
-        .tab-btn.exit-btn.active::after { background: var(--danger); }
-        
-        /* Grid & Layouts */
-        .settings-grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
-        @media(min-width: 768px) { .settings-grid { grid-template-columns: 1fr 1fr; } }
         .flex { display: flex; }
-        .flex-col { flex-direction: column; }
-        .justify-between { justify-content: space-between; }
-        .items-center { align-items: center; }
-        .gap-2 { gap: 8px; }
-        .gap-3 { gap: 12px; }
-        .mt-4 { margin-top: 16px; }
-        .mb-2 { margin-bottom: 8px; }
-        .mb-0 { margin-bottom: 0; }
-        .w-full { width: 100%; }
+        .grid { display: grid; gap: 12px; }
+        .grid-2 { grid-template-columns: 1fr 1fr; }
+        .grid-3 { grid-template-columns: repeat(3, 1fr); }
         .text-center { text-align: center; }
-        .text-xs { font-size: 0.75rem; }
-        .text-sm { font-size: 0.875rem; }
-        .text-muted { color: var(--fg-muted); }
-        .font-bold { font-weight: 700; }
+        .text-right { text-align: right; }
+        .mt-4 { margin-top: 16px; }
+        .mb-4 { margin-bottom: 16px; }
+        
+        /* --- COMPONENTS --- */
+        .card { 
+            background: var(--bg-glass); 
+            backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border); 
+            border-radius: var(--radius-lg); 
+            padding: 24px; 
+            margin-bottom: 20px; 
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3); 
+        }
+        
+        /* --- INPUTS --- */
+        input, select, textarea { 
+            width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); 
+            color: var(--fg-main); padding: 12px 16px; border-radius: var(--radius-md); 
+            font-family: var(--font-ui); font-size: 0.95rem; transition: 0.3s; 
+        }
+        input:focus, select:focus, textarea:focus { 
+            border-color: var(--primary); box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2); 
+        }
 
-        /* Modals */
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.8); backdrop-filter: blur(8px); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; visibility: hidden; transition: all 0.3s; }
-        .modal-overlay.open { opacity: 1; visibility: visible; }
-        .modal-content { background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 24px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; transform: scale(0.95); transition: 0.3s; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
-        .modal-overlay.open .modal-content { transform: scale(1); }
+        /* --- BUTTONS --- */
+        .btn { 
+            border: none; border-radius: var(--radius-md); padding: 12px 20px; font-weight: 600; 
+            cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; 
+            transition: 0.2s; width: 100%; font-size: 0.9rem; 
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-primary { background: var(--primary); color: white; box-shadow: 0 0 20px var(--primary-glow); }
+        .btn-accent { background: var(--accent); color: white; }
+        .btn-success { background: rgba(34, 197, 94, 0.15); color: var(--success); border: 1px solid var(--success); }
+        .btn-danger { background: rgba(239, 68, 68, 0.15); color: var(--danger); border: 1px solid var(--danger); }
+        .btn-ghost { background: transparent; border: 1px solid var(--border); color: var(--fg-muted); }
+        .btn-ghost:hover { background: rgba(255,255,255,0.05); color: white; }
+        .btn-sm { padding: 6px 12px; font-size: 0.8rem; width: auto; }
+        .btn-icon { width: 36px; height: 36px; padding: 0; border-radius: 50%; }
 
-        /* Toast */
-        .toast-container { position: fixed; top: 80px; left: 20px; right: 20px; z-index: 300; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
-        .toast { background: var(--bg-elevated); border: 1px solid var(--border); padding: 12px 16px; border-radius: 10px; display: flex; align-items: center; gap: 10px; animation: toastIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto; border-left: 3px solid var(--accent); }
-        .toast.success { border-left-color: var(--success); }
-        .toast.error { border-left-color: var(--danger); }
-        .toast.info { border-left-color: var(--info); }
-        @keyframes toastIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        /* --- HEADER --- */
+        header { 
+            position: fixed; top: 0; left: 0; right: 0; height: 64px; 
+            background: rgba(5, 5, 5, 0.8); backdrop-filter: blur(20px); 
+            border-bottom: 1px solid var(--border); z-index: 50; 
+            display: flex; align-items: center; justify-content: space-between; padding: 0 20px; 
+        }
+        .brand { display: flex; align-items: center; gap: 12px; font-family: var(--font-display); font-weight: 700; font-size: 1.2rem; }
+        .brand-icon { 
+            width: 36px; height: 36px; background: linear-gradient(135deg, var(--primary), var(--accent)); 
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; 
+            font-size: 1.2rem; color: white; box-shadow: 0 0 15px var(--primary-glow); 
+        }
 
-        /* Components */
-        .profile-photo { width: 60px; height: 60px; border-radius: 50%; background: rgba(255,255,255,0.05); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; overflow: hidden; flex-shrink: 0; position: relative; }
-        .profile-photo img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-photo.sm { width: 40px; height: 40px; }
-        .profile-photo.lg { width: 100px; height: 100px; margin: 0 auto; }
+        /* --- NAV --- */
+        .nav-dock { 
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); 
+            background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(20px); 
+            border: 1px solid var(--border); padding: 8px 16px; border-radius: 40px; 
+            display: flex; gap: 8px; z-index: 50; box-shadow: 0 10px 40px rgba(0,0,0,0.6); 
+            max-width: 98%; overflow-x: auto; 
+        }
+        .nav-btn { 
+            width: 48px; height: 48px; border-radius: 50%; border: none; background: transparent; 
+            color: var(--fg-muted); font-size: 1.1rem; cursor: pointer; transition: 0.3s; 
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; 
+        }
+        .nav-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+        .nav-btn.active { background: var(--primary); color: white; transform: translateY(-5px); box-shadow: 0 5px 15px var(--primary-glow); }
+        .nav-btn.exit { color: var(--danger); margin-left: 8px; }
+        .nav-btn.exit.active { background: var(--danger); color: white; }
 
-        #map-container { height: 300px; width: 100%; border-radius: var(--radius); border: 1px solid var(--border); margin-top: 16px; z-index: 1; }
-        .leaflet-container { background: var(--bg-elevated) !important; }
-
-        .list-container { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: rgba(0,0,0,0.2); }
-        .list-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.01); transition: 0.2s; }
+        /* --- LIST ITEMS --- */
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid var(--border); }
         .list-item:last-child { border-bottom: none; }
-        .list-item:hover { background: rgba(255,255,255,0.03); }
-        .list-item-content { display: flex; align-items: center; gap: 12px; flex: 1; }
+        .list-content h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; color: var(--fg-main); }
+        .list-content p { font-size: 0.8rem; color: var(--fg-muted); }
+
+        /* --- MAP --- */
+        #map-container { height: 350px; width: 100%; border-radius: var(--radius-md); border: 1px solid var(--border); margin-top: 16px; z-index: 1; overflow: hidden; }
+
+        /* --- AVATAR --- */
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background: #333; color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; overflow: hidden; object-fit: cover; border: 2px solid var(--border); }
+        .avatar.lg { width: 80px; height: 80px; font-size: 2rem; border-width: 3px; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* --- TABLE --- */
+        .table-container { overflow-x: auto; border-radius: var(--radius-md); border: 1px solid var(--border); }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; min-width: 600px; }
+        .report-table th { text-align: left; padding: 14px; background: rgba(255,255,255,0.05); color: var(--fg-muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+        .report-table td { padding: 14px; border-bottom: 1px solid var(--border); }
+        .report-table tr:hover td { background: rgba(255,255,255,0.02); }
         
-        .stat-card { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-align: center; cursor: pointer; transition: 0.2s; }
-        .stat-card:hover { border-color: var(--accent); background: var(--accent-dim); }
-        .stat-val { font-size: 2.5rem; font-weight: 700; font-family: var(--font-display); background: linear-gradient(135deg, #fff, #888); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        /* Status Colors */
+        .status-cell { font-weight: 700; text-transform: uppercase; font-size: 0.75rem; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        .status-P { color: #000; background: var(--success); }
+        .status-L { color: #000; background: var(--warning); }
+        .status-A { color: #fff; background: var(--danger); }
 
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-        .badge.pending { background: rgba(245, 158, 11, 0.2); color: var(--accent); }
-        .badge.approved { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-        .badge.rejected { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-        .badge.online { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
-
-        .toggle-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
-        .toggle-switch input { opacity: 0; width: 0; height: 0; }
-        .toggle-slider { position: absolute; cursor: pointer; inset: 0; background-color: #333; border-radius: 24px; transition: .3s; }
-        .toggle-slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; border-radius: 50%; transition: .3s; }
-        input:checked + .toggle-slider { background-color: var(--accent); }
-        input:checked + .toggle-slider:before { transform: translateX(20px); }
-
-        /* Table */
-        .log-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
-        .log-table th { text-align: left; color: var(--fg-muted); padding: 8px; border-bottom: 1px solid var(--border); font-size: 0.75rem; text-transform: uppercase; }
-        .log-table td { padding: 10px 8px; border-bottom: 1px solid var(--border); color: var(--fg); }
-        .log-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-        .status-p { color: var(--success); font-weight: 800; }
-        .status-l { color: var(--accent); font-weight: 800; }
-        .status-a { color: var(--danger); font-weight: 800; }
-        
-        .code-font { font-family: monospace; font-size: 0.8rem; color: var(--accent); }
-
-        /* --- CHAT STYLES --- */
-        .chat-layout { display: flex; height: 600px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: rgba(0,0,0,0.3); }
+        /* --- CHAT --- */
+        .chat-layout { display: flex; height: 600px; border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: rgba(0,0,0,0.3); }
         .chat-sidebar { width: 35%; border-right: 1px solid var(--border); background: rgba(0,0,0,0.2); display: flex; flex-direction: column; }
-        .chat-main { width: 65%; display: flex; flex-direction: column; background: var(--bg-card); position: relative; }
+        .chat-main { width: 65%; display: flex; flex-direction: column; background: var(--bg-glass); position: relative; }
         @media(max-width: 768px) { 
-            .chat-layout { flex-direction: column; height: 70vh; } 
-            .chat-sidebar { width: 100%; height: 40%; border-right: none; border-bottom: 1px solid var(--border); display: none; }
+            .chat-layout { flex-direction: column; height: 80vh; } 
+            .chat-sidebar { width: 100%; height: 40%; display: none; }
             .chat-sidebar.mobile-visible { display: flex; }
             .chat-main { width: 100%; height: 60%; display: none; }
             .chat-main.mobile-visible { display: flex; }
         }
-        .chat-header { padding: 12px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.03); font-weight: 600; display: flex; align-items: center; justify-content: space-between; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
-        .message-bubble { max-width: 75%; padding: 10px 14px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; position: relative; word-wrap: break-word; }
-        .msg-sent { align-self: flex-end; background: var(--accent); color: #000; border-bottom-right-radius: 2px; }
-        .msg-received { align-self: flex-start; background: var(--bg-elevated); color: var(--fg); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
+        .chat-header { padding: 12px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.03); font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+        .message-bubble { max-width: 80%; padding: 10px 14px; border-radius: 12px; font-size: 0.9rem; line-height: 1.4; position: relative; word-wrap: break-word; animation: popIn 0.2s ease; }
+        .msg-sent { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 2px; }
+        .msg-received { align-self: flex-start; background: #333; color: var(--fg-main); border: 1px solid var(--border); border-bottom-left-radius: 2px; }
         .msg-meta { font-size: 0.65rem; opacity: 0.7; text-align: right; margin-top: 4px; display: block; }
         .chat-input-area { padding: 12px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.2); display: flex; gap: 10px; }
         .contact-item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; align-items: center; gap: 10px; transition: background 0.2s; }
         .contact-item:hover, .contact-item.active { background: rgba(255,255,255,0.05); }
         .contact-info { flex: 1; overflow: hidden; }
-        .contact-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .contact-name { font-weight: 600; font-size: 0.9rem; }
         .contact-last-msg { font-size: 0.75rem; color: var(--fg-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-        /* --- FILE MANAGER STYLES --- */
-        .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 16px; }
-        .file-item { display: flex; flex-direction: column; align-items: center; padding: 16px; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: 0.2s; }
-        .file-item:hover { background: rgba(255,255,255,0.06); border-color: var(--accent); }
-        .file-icon { font-size: 2rem; color: var(--fg-muted); margin-bottom: 8px; }
-        .file-name { font-size: 0.75rem; text-align: center; word-break: break-word; }
-        .folder-icon { color: var(--accent); }
+        /* --- BADGE --- */
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
+        .badge.pending { background: rgba(249, 115, 22, 0.15); color: var(--warning); }
+        .badge.approved { background: rgba(34, 197, 94, 0.15); color: var(--success); }
+        .badge.rejected { background: rgba(239, 68, 68, 0.15); color: var(--danger); }
+        .badge.online { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid #60a5fa; cursor: pointer; }
+
+        /* --- MODALS --- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px; opacity: 0; visibility: hidden; transition: 0.3s; }
+        .modal-overlay.open { opacity: 1; visibility: visible; }
+        .modal-content { background: #1e1e1e; border: 1px solid var(--border); padding: 24px; border-radius: 20px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; transform: scale(0.9); transition: 0.3s; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); }
+        .modal-overlay.open .modal-content { transform: scale(1); }
+
+        /* --- TOAST --- */
+        #toast-container { position: fixed; top: 80px; right: 20px; z-index: 200; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+        .toast { pointer-events: auto; background: #1e1e1e; border: 1px solid var(--border); border-left: 4px solid var(--primary); color: white; padding: 12px 20px; border-radius: var(--radius-md); box-shadow: 0 10px 15px -3px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 12px; animation: slideIn 0.3s ease; }
+        @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* --- AI CHAT --- */
+        .ai-bubble { background: linear-gradient(135deg, rgba(99,102,241,0.2), rgba(217,70,239,0.2)); border: 1px solid rgba(99,102,241,0.3); }
     </style>
 </head>
 <body>
-    <div class="bg-gradient-orb orb-1"></div>
-    <div class="bg-gradient-orb orb-2"></div>
-
-    <!-- Header -->
-    <header style="position: fixed; top: 0; left: 0; right: 0; height: 64px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: rgba(10, 11, 13, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border); z-index: 100;">
-        <div class="flex items-center gap-3">
-            <div style="width: 36px; height: 36px; background: var(--accent); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 800; color: #000; font-size: 1.1rem; box-shadow: 0 0 15px var(--accent-glow);">N</div>
-            <div style="font-weight: 700; font-size: 1.2rem; font-family: var(--font-display);">Nexus<span style="color:var(--accent)">HR</span></div>
+    
+    <!-- HEADER -->
+    <header>
+        <div class="brand">
+            <div class="brand-icon"><i class="fa-solid fa-cube"></i></div>
+            <div>Nexus HR <span style="font-size:0.7em; color:var(--primary); font-weight:400;" id="version-display">v2.0</span></div>
         </div>
-        <div id="cloud-indicator" class="badge online" style="cursor: pointer;" onclick="manualSync()">Local</div>
+        <div style="display:flex; gap:10px; align-items: center;">
+            <div id="cloud-status" class="badge online" onclick="manualSync()">Local</div>
+            <i class="fa-solid fa-bell" style="cursor:pointer; color: var(--fg-muted);" onclick="showNotification('System Active', 'info')"></i>
+        </div>
     </header>
 
-    <main id="app-container">
-        <!-- Login Screen -->
-        <section id="login-screen" class="screen">
-            <div class="flex items-center justify-center" style="min-height: 80vh;">
-                <div class="card" style="width: 100%; max-width: 380px; text-align: center;">
-                    <div style="margin-bottom: 24px;">
-                        <div style="width: 80px; height: 80px; background: var(--accent); border-radius: 20px; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #000; box-shadow: 0 0 30px var(--accent-glow);">
-                            <i class="fa-solid fa-fingerprint"></i>
-                        </div>
-                        <h1 style="font-size: 1.6rem;">Workforce Command</h1>
-                        <p style="color: var(--fg-muted); font-size: 0.9rem;">Secure Enterprise Access</p>
-                    </div>
-                    
-                    <div class="flex justify-between items-center mb-4" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; margin-bottom: 24px;">
-                        <span style="font-size: 0.85rem; font-weight: 600;">Local Offline Mode</span>
-                        <label class="toggle-switch">
-                            <input type="checkbox" id="login-local-mode" onchange="toggleLocalMode(this)">
-                            <span class="toggle-slider"></span>
-                        </label>
-                    </div>
+    <!-- LOGIN SCREEN -->
+    <section id="login-screen" class="screen">
+        <div style="max-width: 380px; margin: 8vh auto; text-align: center;">
+            <div style="width: 100px; height: 100px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 28px; margin: 0 auto 32px; display: flex; align-items: center; justify-content: center; font-size: 3rem; color: white; box-shadow: 0 20px 50px rgba(99, 102, 241, 0.4);">
+                <i class="fa-solid fa-fingerprint"></i>
+            </div>
+            <h1 style="margin-bottom: 8px;">Enterprise Access</h1>
+            <p style="color: var(--fg-muted); margin-bottom: 40px;">Secure AI-Powered HR System</p>
+            
+            <form onsubmit="handleLogin(event)">
+                <div class="input-group">
+                    <input type="text" id="username" placeholder="User ID" required style="text-align: center; font-size: 1.1rem;">
+                </div>
+                <div class="input-group">
+                    <input type="password" id="password" placeholder="Password" required style="text-align: center; font-size: 1.1rem;">
+                </div>
+                <button type="submit" class="btn btn-primary" style="height: 54px; font-size: 1rem; border-radius: 30px;">Authenticate</button>
+            </form>
+            <p class="mt-4" style="font-size: 0.8rem; color: var(--fg-muted);">Contact Administrator for credentials.</p>
+        </div>
+    </section>
 
-                    <form onsubmit="handleLogin(event)">
-                        <div class="input-group">
-                            <input type="text" id="username" placeholder="User ID" required style="text-align: center; font-size: 1.1rem;">
-                        </div>
-                        <div class="input-group mb-0">
-                            <input type="password" id="password" placeholder="Password" required style="text-align: center; font-size: 1.1rem;">
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-4">Authenticate</button>
-                    </form>
+    <!-- ADMIN PANEL -->
+    <section id="admin-panel" class="screen hidden">
+        
+        <!-- Dashboard -->
+        <div id="view-dashboard">
+            <div class="card">
+                <h2>Command Center <i class="fa-solid fa-chart-pie" style="opacity:0.3"></i></h2>
+                <div class="grid grid-2">
+                    <div class="card" style="padding: 20px; text-align: center; margin-bottom: 0; cursor: pointer; background: rgba(99, 102, 241, 0.1);" onclick="switchAdminTab('team')">
+                        <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary);" id="adm-stat-emp">0</div>
+                        <div style="font-size: 0.85rem; color: var(--fg-muted);">Employees</div>
+                    </div>
+                    <div class="card" style="padding: 20px; text-align: center; margin-bottom: 0; cursor: pointer; background: rgba(249, 115, 22, 0.1);" onclick="switchAdminTab('pending')">
+                        <div style="font-size: 2.5rem; font-weight: 700; color: var(--warning);" id="adm-stat-req">0</div>
+                        <div style="font-size: 0.85rem; color: var(--fg-muted);">Pending</div>
+                    </div>
+                    <div class="card" style="padding: 20px; text-align: center; margin-bottom: 0; cursor: pointer; background: rgba(34, 197, 94, 0.1);" onclick="switchAdminTab('manager')">
+                        <div style="font-size: 2.5rem; font-weight: 700; color: var(--success);"><i class="fa-solid fa-clock-rotate-left"></i></div>
+                        <div style="font-size: 0.85rem; color: var(--fg-muted);">Attendance Mgr</div>
+                    </div>
+                    <div class="card" style="padding: 20px; text-align: center; margin-bottom: 0; cursor: pointer; background: rgba(217, 70, 239, 0.1);" onclick="switchAdminTab('broadcast')">
+                        <div style="font-size: 2.5rem; font-weight: 700; color: var(--accent);"><i class="fa-solid fa-bullhorn"></i></div>
+                        <div style="font-size: 0.85rem; color: var(--fg-muted);">Broadcast</div>
+                    </div>
                 </div>
             </div>
-        </section>
+            <div class="card">
+                <h2>Live Operations Feed</h2>
+                <div id="map-container"></div>
+            </div>
+        </div>
 
-        <!-- Admin Panel -->
-        <section id="admin-panel" class="screen hidden">
-            <!-- Dashboard View -->
-            <div id="admin-view-dashboard">
-                <div class="card">
-                    <h2>Command Center <i class="fa-solid fa-chart-line" style="color: var(--fg-muted); font-size: 0.9rem;"></i></h2>
-                    <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-                        <div class="stat-card" onclick="openStatModal('total')">
-                            <div class="stat-val" id="stat-total">0</div>
-                            <div style="font-size: 0.8rem; color: var(--fg-muted); margin-top: 5px;">Total Staff</div>
-                        </div>
-                        <div class="stat-card" onclick="openStatModal('online')">
-                            <div class="stat-val" id="stat-online">0</div>
-                            <div style="font-size: 0.8rem; color: var(--fg-muted); margin-top: 5px;">Active Now</div>
-                        </div>
-                        <div class="stat-card" onclick="openStatModal('pending')">
-                            <div class="stat-val" id="stat-adv">0</div>
-                            <div style="font-size: 0.8rem; color: var(--fg-muted); margin-top: 5px;">Pending Advances</div>
-                        </div>
-                        <div class="stat-card" onclick="openStatModal('checkins')">
-                            <div class="stat-val" id="stat-checkins">0</div>
-                            <div style="font-size: 0.8rem; color: var(--fg-muted); margin-top: 5px;">Present Today</div>
-                        </div>
-                    </div>
-                    
-                    <h3 style="margin-top: 24px; margin-bottom: 12px; display: flex; justify-content: space-between;">
-                        Live Operations Map 
-                        <span class="text-xs text-muted" style="font-weight: 400;">GPS Enabled</span>
-                    </h3>
-                    <div id="map-container"></div>
+        <!-- Company Management -->
+        <div id="view-company" class="hidden">
+            <div class="card">
+                <h2>Company Management <button class="btn btn-sm btn-primary" onclick="openModal('companyModal')"><i class="fa-solid fa-plus"></i> Add</button></h2>
+                <div id="company-list"></div>
+            </div>
+        </div>
+
+        <!-- Team Management (UPDATED) -->
+        <div id="view-team" class="hidden">
+            <div class="card">
+                <h2>Team Directory <button class="btn btn-sm btn-primary" onclick="openModal('empModal')"><i class="fa-solid fa-plus"></i> Add</button></h2>
+                <div id="team-list"></div>
+            </div>
+        </div>
+
+        <!-- Pending Requests -->
+        <div id="view-pending" class="hidden">
+            <div class="card">
+                <h2>Pending Requests</h2>
+                <div id="pending-list"></div>
+            </div>
+        </div>
+
+        <!-- Attendance Manager (UPDATED) -->
+        <div id="view-manager" class="hidden">
+            <div class="card">
+                <h2>Attendance Manager <span class="badge pending">Backdated Entry</span></h2>
+                
+                <!-- TABS -->
+                <div class="flex" style="gap:10px; margin-bottom:20px;">
+                    <button class="btn btn-sm btn-primary" onclick="switchMgrTab('single')">Single Entry</button>
+                    <button class="btn btn-sm btn-ghost" onclick="switchMgrTab('bulk')">Bulk Entry</button>
+                    <button class="btn btn-sm btn-ghost" onclick="switchMgrTab('history')">History / Edit</button>
                 </div>
 
-                <div class="card">
-                    <h2>Security Log <span class="text-xs text-muted font-normal">Recent Access</span></h2>
-                    <div style="overflow-x: auto;">
-                        <table class="log-table">
-                            <thead><tr><th>User</th><th>Device</th><th>IP</th><th>Time</th></tr></thead>
-                            <tbody id="security-log-body"></tbody>
+                <!-- SINGLE ENTRY -->
+                <div id="mgr-tab-single">
+                    <div class="input-group">
+                        <label>Select Employee</label>
+                        <select id="adm-mgr-emp"></select>
+                    </div>
+                    <div class="grid grid-2">
+                        <div class="input-group"><label>Date</label><input type="date" id="adm-mgr-date"></div>
+                        <div class="input-group">
+                            <label>Status</label>
+                            <select id="adm-mgr-status">
+                                <option value="P">Present (P)</option>
+                                <option value="L">Leave (L)</option>
+                                <option value="A">Absent (A)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-2" id="mgr-time-inputs">
+                        <div class="input-group"><label>Check In</label><input type="time" id="adm-mgr-in" value="09:30"></div>
+                        <div class="input-group"><label>Check Out</label><input type="time" id="adm-mgr-out" value="18:30"></div>
+                    </div>
+                    <div class="input-group">
+                        <label>Coordinates (Lat, Lng)</label>
+                        <div class="flex" style="gap: 5px;">
+                            <input type="number" id="adm-mgr-lat" placeholder="Lat" step="any">
+                            <input type="number" id="adm-mgr-lng" placeholder="Lng" step="any">
+                            <button class="btn btn-ghost" style="width: auto;" onclick="fillRandomCoords()"><i class="fa-solid fa-dice"></i></button>
+                        </div>
+                    </div>
+                    <div class="input-group"><label>Notes</label><input type="text" id="adm-mgr-notes"></div>
+                    <button class="btn btn-primary" onclick="adminAddAttendance()"><i class="fa-solid fa-plus"></i> Add Record</button>
+                </div>
+
+                <!-- BULK ENTRY -->
+                <div id="mgr-tab-bulk" class="hidden">
+                    <div class="input-group"><label>Date</label><input type="date" id="adm-bulk-date"></div>
+                    <div class="grid grid-3">
+                        <button class="btn btn-success" onclick="bulkMark('P')">Mark All Present (P)</button>
+                        <button class="btn btn-accent" onclick="bulkMark('L')">Mark All Leave (L)</button>
+                        <button class="btn btn-danger" onclick="bulkMark('A')">Mark All Absent (A)</button>
+                    </div>
+                    <p class="mt-4" style="font-size:0.8rem; color:var(--warning);">Warning: This overwrites existing entries for the selected date.</p>
+                </div>
+
+                <!-- HISTORY / EDIT -->
+                <div id="mgr-tab-history" class="hidden">
+                     <div class="input-group"><label>Filter by Date</label><input type="date" id="adm-hist-date" onchange="renderManagerHistory()"></div>
+                     <div id="mgr-history-list" style="max-height: 400px; overflow-y: auto;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEW: BROADCAST MESSAGING -->
+        <div id="view-broadcast" class="hidden">
+            <div class="card">
+                <h2>Broadcast Message</h2>
+                <div class="input-group"><label>Message Type</label>
+                    <select id="bc-type">
+                        <option value="General">General Announcement</option>
+                        <option value="Meeting Scheduled">Meeting Scheduled</option>
+                        <option value="Important Message">Important Message</option>
+                        <option value="Holiday Notice">Holiday Notice</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>Select Recipients</label>
+                    <select id="bc-target">
+                        <option value="all">All Employees</option>
+                        <!-- Populated via JS -->
+                    </select>
+                </div>
+                <div class="input-group"><label>Message Content</label><textarea id="bc-msg" rows="4" placeholder="Type your message here..."></textarea></div>
+                <button class="btn btn-accent" onclick="sendBroadcast()"><i class="fa-solid fa-paper-plane"></i> Send Broadcast</button>
+            </div>
+        </div>
+
+        <!-- Reports (UPDATED) -->
+        <div id="view-reports" class="hidden">
+            <div class="card">
+                <h2>Attendance Reports</h2>
+                <div class="grid grid-2">
+                    <div>
+                        <label>Report Type</label>
+                        <select id="report-type" onchange="toggleReportDate()">
+                            <option value="daily">Daily Log</option>
+                            <option value="monthly">Monthly Summary</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>Select Date</label>
+                        <input type="date" id="report-date">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="generateReport()"><i class="fa-solid fa-magnifying-glass"></i> Generate Report</button>
+                
+                <div id="report-preview" class="hidden" style="margin-top: 24px;">
+                    <div class="table-container">
+                        <table class="report-table" id="report-table-el">
+                            <!-- JS -->
                         </table>
                     </div>
-                </div>
-            </div>
-
-            <!-- Team View -->
-            <div id="admin-view-team" class="hidden">
-                <div class="card">
-                    <h2>Team Directory <button class="btn btn-sm btn-primary" onclick="openEmpModal()" style="margin-left: auto;"><i class="fa-solid fa-plus"></i> Add</button></h2>
-                    <div id="team-list"></div>
-                </div>
-            </div>
-
-            <!-- Advances View -->
-            <div id="admin-view-advances" class="hidden">
-                <div class="card">
-                    <h2>Advance Requests <span class="text-xs text-muted font-normal">Finance Approval</span></h2>
-                    <div id="admin-advance-list"></div>
-                </div>
-            </div>
-
-            <!-- Leaves View -->
-            <div id="admin-view-leaves" class="hidden">
-                <div class="card">
-                    <h2>Leave Requests <span class="text-xs text-muted font-normal">HR Approval</span></h2>
-                    <div id="admin-leave-list"></div>
-                </div>
-            </div>
-
-            <!-- Communication Hub -->
-            <div id="admin-view-msg" class="hidden">
-                <div class="card">
-                    <h2>Communication Hub</h2>
-                    <div class="settings-grid">
-                        <div class="stat-card" onclick="openMsgModal('chat')">
-                            <i class="fa-brands fa-whatsapp" style="font-size: 2rem; color: var(--success); margin-bottom: 10px;"></i>
-                            <div style="font-weight: 600;">WhatsApp Chat</div>
-                            <div class="text-xs text-muted">Direct / Group</div>
-                        </div>
-                        <div class="stat-card" onclick="openMsgModal('meeting')">
-                            <i class="fa-solid fa-video" style="font-size: 2rem; color: var(--purple); margin-bottom: 10px;"></i>
-                            <div style="font-weight: 600;">Schedule Meeting</div>
-                            <div class="text-xs text-muted">Link & Notifications</div>
-                        </div>
-                        <div class="stat-card" onclick="openMsgModal('important')">
-                            <i class="fa-solid fa-file-excel" style="font-size: 2rem; color: var(--accent); margin-bottom: 10px;"></i>
-                            <div style="font-weight: 600;">Important Doc</div>
-                            <div class="text-xs text-muted">Send Excel/PDF via WA</div>
-                        </div>
-                        <div class="stat-card" onclick="openMsgModal('projector')">
-                            <i class="fa-solid fa-bell" style="font-size: 2rem; color: var(--info); margin-bottom: 10px;"></i>
-                            <div style="font-weight: 600;">Service Reminder</div>
-                            <div class="text-xs text-muted">DCI / Non-DCI Alerts</div>
-                        </div>
+                    <div class="flex" style="gap: 10px; margin-top: 16px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="downloadPDF()"><i class="fa-solid fa-file-pdf"></i> PDF</button>
+                        <button class="btn btn-success" onclick="shareReport('whatsapp')"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Reports View -->
-            <div id="admin-view-reports" class="hidden">
-                <div class="card">
-                    <h2>Attendance Reports</h2>
-                    <div class="settings-grid">
-                        <div>
-                            <div class="input-group"><label>Report Type</label>
-                                <select id="report-type-select" onchange="toggleReportDateInput()">
-                                    <option value="daily">Daily Report</option>
-                                    <option value="monthly">Monthly Summary</option>
-                                </select>
-                            </div>
-                            <div class="input-group">
-                                <label>Select Company (Optional)</label>
-                                <select id="report-company-select" multiple style="height: 100px;">
-                                    <option value="all">All Companies</option>
-                                </select>
-                            </div>
-                            <div class="input-group" id="report-date-container">
-                                <label id="report-date-label">Select Date</label>
-                                <input type="date" id="report-date-input">
-                            </div>
-                            <button class="btn btn-primary" onclick="generateReport()"><i class="fa-solid fa-magnifying-glass"></i> Generate Report</button>
-                        </div>
-                        <div class="flex flex-col justify-center items-center text-center" style="background: rgba(0,0,0,0.2); border-radius: var(--radius); padding: 20px;">
-                            <div class="text-sm text-muted mb-2">Default Sender Email</div>
-                            <div class="code-font" id="report-sender-display">Not Configured</div>
-                        </div>
+        <!-- Map View (Full) -->
+        <div id="view-map" class="hidden">
+             <div class="card">
+                <h2>Live Tracking <span class="badge online">Real-time</span></h2>
+                <div id="map-container" style="height: 500px;"></div>
+             </div>
+        </div>
+
+        <!-- Settings (UPDATED) -->
+        <div id="view-settings" class="hidden">
+            <div class="card">
+                <h2>System Configuration</h2>
+                
+                <!-- VERSION -->
+                <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 20px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                    <div>
+                        <h3 style="margin:0; color:white;">App Version</h3>
+                        <p style="font-size:0.8rem; margin:0;">Current: <span id="setting-ver">v2.0</span> | Latest: <span id="setting-latest">v2.0</span></p>
                     </div>
+                    <button class="btn btn-sm btn-primary" onclick="checkForUpdates()"><i class="fa-solid fa-rotate"></i> Check Update</button>
                 </div>
 
-                <div id="report-result-card" class="card hidden">
-                    <h2>Report <span id="report-period-display"></span></h2>
-                    <div style="overflow-x: auto;">
-                        <table class="log-table" id="report-table"></table>
-                    </div>
-                    <div class="settings-grid" style="margin-top: 20px;">
-                        <button class="btn btn-ghost" onclick="downloadReportPDF()"><i class="fa-solid fa-file-pdf"></i> Export PDF</button>
-                        <button class="btn btn-ghost" onclick="shareReport('wa')"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
-                    </div>
+                <h3 style="color: var(--primary); margin-top: 24px;">Database Management</h3>
+                <div class="grid grid-2">
+                    <button class="btn btn-success" onclick="downloadBackup()"><i class="fa-solid fa-download"></i> Backup Database</button>
+                    <button class="btn btn-accent" onclick="document.getElementById('restore-file').click()"><i class="fa-solid fa-upload"></i> Restore Database</button>
+                    <input type="file" id="restore-file" style="display:none;" accept=".json" onchange="restoreBackup(this)">
+                </div>
+                <p class="mt-4" style="font-size:0.75rem; color:var(--fg-muted);">Restoring will overwrite all current data.</p>
+
+                <div style="height: 1px; background: var(--border); margin: 32px 0;"></div>
+                
+                <h3 style="color: var(--primary);">Cloud Sync (JSONBin)</h3>
+                <div class="input-group"><label>Master Key</label><input type="password" id="cfg-master-key" placeholder="$2a$10$..."></div>
+                <div class="input-group"><label>Bin ID</label><input type="text" id="cfg-bin-id" placeholder="64b..."></div>
+                <button class="btn btn-primary" onclick="saveCloudSettings()"><i class="fa-solid fa-cloud-arrow-up"></i> Save & Connect</button>
+
+                <div style="height: 1px; background: var(--border); margin: 32px 0;"></div>
+
+                <h3 style="color: var(--success);">WhatsApp Automation</h3>
+                <div class="input-group"><label>Check-in Group Link</label><input type="text" id="cfg-wa-checkin" placeholder="https://chat.whatsapp.com/..."></div>
+                <div class="input-group"><label>Birthday Group Link</label><input type="text" id="cfg-wa-bday" placeholder="https://chat.whatsapp.com/..."></div>
+                <div class="flex" style="gap:10px; margin-bottom: 20px;">
+                    <button class="btn btn-sm btn-success" onclick="testWA('checkin')">Test Check-in Msg</button>
+                    <button class="btn btn-sm btn-success" onclick="testWA('birthday')">Test Bday Msg</button>
+                </div>
+
+                <h3 style="color: var(--primary);">Email Automation</h3>
+                <div class="grid grid-2">
+                    <div class="input-group"><label>Leave Request To</label><input type="email" id="cfg-email-leave-to"></div>
+                    <div class="input-group"><label>Leave Request CC</label><input type="email" id="cfg-email-leave-cc"></div>
+                </div>
+                <div class="input-group"><label>Leave Subject</label><input type="text" id="cfg-email-leave-sub" value="New Leave Application"></div>
+                <div class="input-group"><label>Leave Body</label><textarea id="cfg-email-leave-body" rows="2">Leave application from {name}.</textarea></div>
+                <div class="grid grid-2">
+                    <div class="input-group"><label>Attendance Alert To</label><input type="email" id="cfg-email-att-to"></div>
+                    <div class="input-group"><label>Attendance Alert CC</label><input type="email" id="cfg-email-att-cc"></div>
+                </div>
+
+                <div style="height: 1px; background: var(--border); margin: 32px 0;"></div>
+                <h3 style="color: #fff;">Admin Profile</h3>
+                <div class="text-center" style="margin-bottom: 20px;">
+                    <div class="avatar lg" id="admin-settings-avatar" style="margin: 0 auto;">A</div>
+                </div>
+                <div class="input-group"><label>Admin Name</label><input type="text" id="cfg-admin-name"></div>
+                <div class="input-group"><label>Admin Password</label><input type="password" id="cfg-admin-pass" placeholder="New Password"></div>
+                <div class="input-group"><label>Profile Photo URL</label><input type="text" id="cfg-admin-photo" placeholder="https://i.ibb.co/..."></div>
+                <button class="btn btn-primary" onclick="saveAdminProfile()">Update Profile</button>
+            </div>
+        </div>
+
+    </section>
+
+    <!-- EMPLOYEE PANEL -->
+    <section id="emp-panel" class="screen hidden">
+        <!-- Dashboard -->
+        <div id="emp-view-home">
+            <div class="card" style="text-align: center;">
+                <div class="avatar avatar lg" style="margin: 0 auto 20px; background: linear-gradient(135deg, var(--primary), var(--accent)); border: none;" id="emp-avatar">U</div>
+                <h1 id="emp-name-display">User Name</h1>
+                <p style="color: var(--fg-muted); margin-bottom: 24px;" id="emp-role-display">Role</p>
+                
+                <div class="card" style="background: rgba(0,0,0,0.2); padding: 16px; margin-bottom: 30px;">
+                    <div id="clock-display" style="font-size: 3.5rem; font-weight: 700; font-family: var(--font-display); color: var(--fg-main); line-height: 1; margin-bottom: 4px;">--:--</div>
+                    <div style="color: var(--primary); font-size: 0.9rem; font-weight: 600; letter-spacing: 1px;" id="date-display">DATE</div>
+                </div>
+
+                <div class="flex" style="gap:10px; margin-bottom: 20px;">
+                    <button id="btn-checkin" class="btn btn-primary" style="flex:1; height: 60px; font-size: 1.1rem; box-shadow: 0 0 20px var(--primary-glow);" onclick="performCheckIn()">
+                        <i class="fa-solid fa-location-crosshairs"></i> Check In
+                    </button>
+                    <button id="btn-checkout" class="btn btn-danger hidden" style="flex:1; height: 60px; font-size: 1.1rem;" onclick="performCheckOut()">
+                        <i class="fa-solid fa-person-walking-arrow-right"></i> Check Out
+                    </button>
+                </div>
+                
+                <button class="btn btn-ghost btn-sm" onclick="generateCalendarEvent()" style="margin-bottom:20px;">
+                    <i class="fa-solid fa-calendar-plus"></i> Add Daily Check-in to Calendar
+                </button>
+
+                <div id="att-status" class="hidden" style="margin-top: 20px; padding: 12px; background: rgba(34, 197, 94, 0.1); border-radius: 8px; border: 1px solid var(--success); color: var(--success);">
+                    <i class="fa-solid fa-check-circle"></i> Checked In at <span id="checkin-time" style="font-weight: 700;"></span>
                 </div>
             </div>
 
-            <!-- Cloud Storage Manager (Admin) -->
-            <div id="admin-view-cloud" class="hidden">
-                <div class="card">
-                    <h2>
-                        Cloud Storage Manager 
-                        <div style="display:flex; gap:5px;">
-                             <button class="btn btn-sm btn-primary" onclick="toggleActiveDrive('gdrive')" style="background: var(--info);"><i class="fa-brands fa-google-drive"></i> G-Drive</button>
-                             <button class="btn btn-sm btn-primary" onclick="toggleActiveDrive('pcloud')" style="background: var(--success);"><i class="fa-solid fa-cloud"></i> P-Cloud</button>
-                        </div>
-                    </h2>
-                    <p class="text-xs text-muted mb-4">Current Active Source: <span id="active-drive-name" class="font-bold text-accent">Google Drive</span></p>
-                    
-                    <div class="input-group">
-                        <label id="active-drive-label">Active Drive Link</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="admin-drive-link" placeholder="https://drive.google.com/..." onchange="saveGlobalSettings()">
-                            <button class="btn btn-primary" style="width: auto;" onclick="window.open(document.getElementById('admin-drive-link').value, '_blank')"><i class="fa-solid fa-external-link-alt"></i></button>
-                        </div>
-                    </div>
-
-                    <div id="admin-cloud-list" class="file-grid mt-4">
-                        <!-- Files Loaded Here -->
-                        <div class="text-center text-muted w-full" style="grid-column: 1/-1;">Enter a link above or switch drive sources.</div>
-                    </div>
+            <!-- Quick Actions -->
+            <div class="card">
+                <h2>Quick Actions</h2>
+                <div class="grid grid-2">
+                    <button class="btn btn-ghost" onclick="openModal('advModal')"><i class="fa-solid fa-money-bill-wave" style="color: var(--accent);"></i> Advance</button>
+                    <button class="btn btn-ghost" onclick="openModal('leaveModal')"><i class="fa-regular fa-calendar-check" style="color: var(--primary);"></i> Leave</button>
                 </div>
             </div>
 
-            <!-- Settings View -->
-            <div id="admin-view-settings" class="hidden">
-                <div class="card">
-                    <h2>System Configuration</h2>
-                    
-                    <div class="settings-grid">
-                        <div>
-                            <h3>Cloud & API Keys</h3>
-                            <div class="input-group"><label>JSON Bin ID</label><input type="text" id="cfg-bin-id" readonly value="6989fe3fae596e708f1dd133" style="opacity: 0.7;"></div>
-                            <div class="input-group"><label>JSON Master Key</label><input type="password" id="cfg-master-key" readonly value="$2a$10$31RRwjp5GFNYo/puv4Q/wOln3poLiM/SM3lXde69LjAIKizHfzYSe" style="opacity: 0.7;"></div>
-                            <div class="input-group"><label>ImgBB API Key</label><input type="password" id="cfg-imgbb-key" placeholder="ImgBB Key"></div>
-                        </div>
-                    </div>
-
-                    <div style="height: 1px; background: var(--border); margin: 24px 0;"></div>
-                    
-                    <!-- AUTOMATION SETTINGS -->
-                    <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(245, 158, 11, 0.05);">
-                        <h3 style="color: var(--accent); margin-bottom: 15px;">🤖 WhatsApp Automation Engine</h3>
-                        
-                        <div class="settings-grid">
-                            <div>
-                                <h4 class="text-xs text-muted mb-2">API Configuration</h4>
-                                <div class="input-group"><label>WhatsApp API Token</label><input type="password" id="cfg-wa-token" placeholder="Bearer Token..."></div>
-                                <div class="input-group"><label>Instance ID / Phone ID</label><input type="text" id="cfg-wa-instance" placeholder="e.g. 12345678"></div>
-                            </div>
-                            <div>
-                                <h4 class="text-xs text-muted mb-2">Group Links & Reminders</h4>
-                                <div class="input-group"><label>Check-in Group Link</label><input type="text" id="cfg-wa-checkin-group" placeholder="https://chat.whatsapp.com/..."></div>
-                                <div class="input-group"><label>Birthday Group Link</label><input type="text" id="cfg-wa-birthday-group" placeholder="https://chat.whatsapp.com/..."></div>
-                                <div class="input-group"><label>Auto-Checkin Time</label><input type="time" id="cfg-checkin-time" value="09:30"></div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div style="height: 1px; background: var(--border); margin: 24px 0;"></div>
-
-                    <!-- CLOUD DRIVE LINK SETTINGS -->
-                    <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(59, 130, 246, 0.05);">
-                        <h3 style="color: var(--info); margin-bottom: 15px;">☁️ Cloud Drive Links</h3>
-                        <p class="text-xs text-muted mb-4">Configure links for both Google Drive and P-Cloud. Links are saved permanently.</p>
-                        
-                        <div class="settings-grid">
-                            <div>
-                                <div class="input-group"><label>Google Drive Link</label><input type="text" id="cfg-gdrive-link" placeholder="https://drive.google.com/..."></div>
-                            </div>
-                            <div>
-                                <div class="input-group"><label>P-Cloud Link</label><input type="text" id="cfg-pcloud-link" placeholder="https://my.pcloud.com/..."></div>
-                            </div>
-                        </div>
-                        
-                        <div class="input-group mt-4">
-                             <label>Default Cloud Storage</label>
-                             <select id="cfg-active-drive" class="w-full">
-                                 <option value="gdrive">Google Drive</option>
-                                 <option value="pcloud">P-Cloud</option>
-                             </select>
-                        </div>
-
-                        <div style="margin-top: 24px; text-align: right;">
-                            <button class="btn btn-primary" onclick="saveGlobalSettings()" style="width: auto; padding-left: 30px; padding-right: 30px;">
-                                <i class="fa-solid fa-save"></i> Save All Settings
-                            </button>
-                        </div>
-                    </div>
-
-                    <div style="height: 1px; background: var(--border); margin: 24px 0;"></div>
-
-                    <!-- CALL REPORT UPLOAD SETTINGS -->
-                    <div style="border: 1px solid var(--border); padding: 20px; border-radius: var(--radius); background: rgba(168, 85, 247, 0.05);">
-                        <h3 style="color: var(--purple); margin-bottom: 15px;">📂 Call Report Upload Configuration</h3>
-                        <p class="text-xs text-muted mb-4">Define where employees upload call reports and the target Gmail ID.</p>
-                        
-                        <div class="settings-grid">
-                            <div>
-                                <div class="input-group"><label>Target Gmail ID</label><input type="email" id="cfg-call-report-email" placeholder="reports@company.com"></div>
-                                <p class="text-xs text-muted mt-2">Reports will be sent to this address.</p>
-                            </div>
-                            <div>
-                                <div class="input-group"><label>Upload Destination</label>
-                                    <select id="cfg-call-report-dest">
-                                        <option value="gdrive">Google Drive</option>
-                                        <option value="pcloud">P-Cloud</option>
-                                    </select>
-                                </div>
-                                <p class="text-xs text-muted mt-2">Employees will be prompted to upload to this location.</p>
-                            </div>
-                        </div>
-                         <div style="margin-top: 24px; text-align: right;">
-                            <button class="btn btn-primary" onclick="saveCallReportSettings()" style="width: auto; padding-left: 30px; padding-right: 30px;">
-                                <i class="fa-solid fa-save"></i> Save Report Settings
-                            </button>
-                        </div>
-                    </div>
-
-                </div>
+            <!-- My Requests -->
+            <div class="card">
+                <h2>My Requests</h2>
+                <div id="my-req-list"></div>
             </div>
-        </section>
+        </div>
 
-        <!-- Employee Panel -->
-        <section id="employee-panel" class="screen hidden">
-            <!-- Home View -->
-            <div id="emp-view-home">
-                <div class="card">
-                    <div class="flex items-center gap-3 mb-4">
-                        <div class="profile-photo" id="emp-dash-photo"><i class="fa-solid fa-user"></i></div>
-                        <div>
-                            <h2 id="emp-dash-name" style="margin: 0; border: none; padding: 0; font-size: 1.3rem;">Employee</h2>
-                            <div class="text-xs text-muted" id="emp-dash-role">Designation</div>
-                        </div>
-                    </div>
-
-                    <div class="text-center" style="margin: 32px 0;">
-                        <div id="clock-display" style="font-size: 3rem; font-weight: 700; font-family: var(--font-display); color: var(--fg); text-shadow: 0 0 20px rgba(255,255,255,0.1);">--:--</div>
-                        <div id="date-display" style="color: var(--accent); font-size: 0.9rem; margin-top: 4px; font-weight: 600;"></div>
-                    </div>
-
-                    <button id="btn-check-in" class="btn btn-primary" onclick="performCheckIn()"><i class="fa-solid fa-location-dot"></i> Check In</button>
-                    <button id="btn-check-out" class="btn btn-danger hidden" onclick="performCheckOut()"><i class="fa-solid fa-person-walking-arrow-right"></i> Check Out</button>
-                    
-                    <div id="att-status" class="hidden" style="margin-top: 20px; background: rgba(0,0,0,0.3); padding: 16px; border-radius: 12px; text-align: center; border: 1px solid var(--border);">
-                        <div class="text-xs text-muted">Current Status</div>
-                        <div class="badge approved" style="font-size: 0.9rem; margin: 4px 0;">Checked In</div>
-                        <div style="margin-top: 8px; font-size: 0.95rem; font-weight: 600;" id="att-times">--:--</div>
-                    </div>
-                </div>
-
-                <!-- RESTORED: My Requests (Advances & Leaves) -->
-                <div class="card">
-                    <h2>My Requests</h2>
-                    <div class="input-group">
-                         <label>Quick Action</label>
-                         <div style="display:flex; gap:10px;">
-                             <button class="btn btn-ghost" onclick="openAdvanceModal()"><i class="fa-solid fa-money-bill-wave"></i> Advance</button>
-                             <button class="btn btn-ghost" onclick="openLeaveModal()"><i class="fa-regular fa-calendar-check"></i> Leave</button>
-                         </div>
-                    </div>
-                    <div id="my-advance-list" style="margin-bottom: 16px;"></div>
-                    <div id="my-leave-list"></div>
-                </div>
-            </div>
-
-            <!-- Call Tab View -->
-            <div id="emp-view-call" class="hidden">
-                <div class="card">
-                    <h2>Field Call Update <button class="btn btn-sm btn-primary" onclick="openCallModal()" style="margin-left: auto;"><i class="fa-solid fa-plus"></i> Upload Report</button></h2>
-                    <div id="call-list" class="list-container mt-4">
-                        <div class="p-3 text-center text-muted">No call reports found.</div>
+        <!-- Call Report -->
+        <div id="emp-view-call" class="hidden">
+            <div class="card">
+                <h2>Field Report Upload</h2>
+                <div class="input-group"><label>Complaint/Job #</label><input type="text" id="call-comp"></div>
+                <div class="input-group"><label>Date</label><input type="date" id="call-date"></div>
+                <div class="input-group"><label>Remarks</label><textarea id="call-remarks" rows="3"></textarea></div>
+                <div class="input-group">
+                    <label>Attachment</label>
+                    <div class="flex" style="gap:10px;">
+                        <input type="file" id="call-file" accept=".pdf, .jpg, .jpeg, .png" style="flex:1;">
+                        <button class="btn btn-primary" style="width: auto;" onclick="uploadDrive()"><i class="fa-brands fa-google-drive"></i> Upload</button>
                     </div>
                 </div>
             </div>
+            <div class="card">
+                <h2>History</h2>
+                <div id="my-call-list"></div>
+            </div>
+        </div>
 
-            <!-- Chat Tab View -->
-            <div id="emp-view-chat" class="hidden">
-                <div class="card" style="padding: 0; height: calc(100vh - 180px); overflow: hidden;">
-                    <div class="chat-layout">
-                        <div class="chat-sidebar" id="emp-chat-sidebar">
-                            <div class="chat-header">
-                                <span>Chats</span>
-                                <button class="btn btn-sm btn-primary" onclick="openNewChatModal()"><i class="fa-solid fa-plus"></i> New</button>
-                            </div>
-                            <div id="emp-contact-list" style="overflow-y: auto; flex: 1;"></div>
+        <!-- Profile / Regularization (UPDATED) -->
+        <div id="emp-view-profile" class="hidden">
+            <div class="card">
+                <h2>My Profile</h2>
+                <div class="flex" style="gap:10px; align-items:center; margin-bottom: 20px;">
+                    <div class="avatar lg" id="edit-emp-avatar-preview">U</div>
+                    <div>
+                        <h3 id="edit-emp-name-display">Name</h3>
+                        <p style="font-size:0.8rem;">You can update your details below.</p>
+                    </div>
+                </div>
+                <div class="input-group"><label>Full Name</label><input type="text" id="edit-emp-name"></div>
+                <div class="grid grid-2">
+                    <div class="input-group"><label>Phone (WhatsApp)</label><input type="text" id="edit-emp-phone"></div>
+                    <div class="input-group"><label>Birthday</label><input type="date" id="edit-emp-dob"></div>
+                </div>
+                <div class="input-group">
+                    <label>Email (Gmail)</label>
+                    <div class="flex" style="gap:5px;">
+                        <input type="email" id="edit-emp-email" placeholder="user@gmail.com">
+                        <select id="edit-emp-email-type" style="width: auto;">
+                            <option value="Official">Official</option>
+                            <option value="Personal">Personal</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="input-group"><label>Photo URL (ImgBB)</label><input type="text" id="edit-emp-photo" placeholder="https://i.ibb.co/..."></div>
+                <div class="input-group"><label>New Password</label><input type="password" id="edit-emp-pass" placeholder="Leave blank to keep current"></div>
+                <button class="btn btn-primary" onclick="saveEmployeeProfile()">Save Changes</button>
+            </div>
+
+            <div class="card">
+                <h2>Regularize Attendance</h2>
+                <p style="font-size:0.8rem; color:var(--fg-muted); margin-bottom:20px;">Forgot to check in? Add a backdated entry here.</p>
+                <div class="input-group"><label>Date</label><input type="date" id="reg-date"></div>
+                <div class="grid grid-2">
+                    <div class="input-group"><label>Check In</label><input type="time" id="reg-in" value="09:30"></div>
+                    <div class="input-group"><label>Check Out</label><input type="time" id="reg-out" value="18:30"></div>
+                </div>
+                <div class="input-group"><label>Reason</label><textarea id="reg-reason" rows="2"></textarea></div>
+                <button class="btn btn-warning" onclick="submitRegularization()">Submit Request</button>
+            </div>
+        </div>
+
+        <!-- Drive -->
+        <div id="emp-view-drive" class="hidden">
+            <div class="card">
+                <h2>Company Drive</h2>
+                <div id="drive-browser" class="grid" style="grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));"></div>
+            </div>
+        </div>
+
+        <!-- Chat -->
+        <div id="emp-view-chat" class="hidden">
+            <div class="card" style="padding: 0; height: calc(100vh - 180px); overflow: hidden;">
+                <div class="chat-layout">
+                    <div class="chat-sidebar" id="chat-sidebar">
+                        <div class="chat-header">
+                            <span>Messages</span>
+                            <button class="btn btn-sm btn-primary" onclick="startNewChat('admin')"><i class="fa-solid fa-plus"></i> Admin</button>
                         </div>
-                        <div class="chat-main" id="emp-chat-main">
-                            <div class="chat-header">
-                                <div class="flex items-center gap-2">
-                                    <button class="btn btn-sm btn-ghost hidden" id="emp-back-to-list" onclick="toggleEmpChatView(false)" style="width:30px; padding:0;"><i class="fa-solid fa-arrow-left"></i></button>
-                                    <div id="emp-current-chat-name" style="font-size: 0.95rem;">Select a chat</div>
-                                </div>
-                                <button class="btn btn-sm btn-ghost" onclick="openChatOptions()"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                        <div id="contact-list" style="overflow-y: auto; flex: 1;"></div>
+                    </div>
+                    <div class="chat-main" id="chat-main">
+                        <div class="chat-header">
+                            <div class="flex items-center gap-2">
+                                <button class="btn btn-sm btn-ghost hidden" id="chat-back" onclick="toggleChatView(false)" style="width:30px; padding:0;"><i class="fa-solid fa-arrow-left"></i></button>
+                                <div id="chat-title" style="font-size: 0.95rem;">Select a chat</div>
                             </div>
-                            <div class="chat-messages" id="emp-messages-container">
-                                <div class="text-center text-muted" style="margin-top: 50px;">Select a contact to start chatting</div>
-                            </div>
-                            <div class="chat-input-area">
-                                <input type="text" id="emp-chat-input" placeholder="Type a message..." onkeypress="handleChatInputKey(event)">
-                                <button class="btn btn-primary" style="width: auto;" onclick="sendEmpMessage()"><i class="fa-solid fa-paper-plane"></i></button>
-                            </div>
+                        </div>
+                        <div class="chat-messages" id="message-container">
+                            <div class="text-center" style="margin-top: 50px; color: var(--fg-muted); opacity: 0.5;">Select a chat to start messaging</div>
+                        </div>
+                        <div class="chat-input-area">
+                            <select id="msg-category" style="width: auto; padding: 8px; border-radius: 8px; font-size: 0.8rem;">
+                                <option value="General">General</option>
+                                <option value="DCI Servicing">DCI Servicing</option>
+                                <option value="Meeting">Meeting</option>
+                                <option value="Urgent">Urgent</option>
+                            </select>
+                            <input type="text" id="msg-input" placeholder="Type a message..." style="flex:1;" onkeypress="if(event.key==='Enter') sendMessage()">
+                            <button class="btn btn-primary" style="width: auto; border-radius: 50%; width: 44px; height: 44px; padding: 0;" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Cloud Storage View (Employee) -->
-            <div id="emp-view-cloud" class="hidden">
-                <div class="card">
-                    <h2>Cloud Storage <span class="badge online" style="margin-left:auto;" id="emp-active-drive-badge">G-Drive</span></h2>
-                    <p class="text-xs text-muted mb-4">Shared resources from Admin.</p>
-                    
-                    <div class="input-group">
-                        <label id="emp-drive-label">Link</label>
-                        <div class="flex gap-2">
-                            <input type="text" id="emp-drive-link" placeholder="https://drive.google.com/..." readonly>
-                            <button class="btn btn-primary" style="width: auto;" onclick="window.open(document.getElementById('emp-drive-link').value, '_blank')"><i class="fa-brands fa-google-drive"></i> Open</button>
-                        </div>
-                    </div>
-
-                    <div id="emp-cloud-list" class="file-grid mt-4">
-                         <div class="text-center text-muted w-full" style="grid-column: 1/-1;">Waiting for Admin to configure Drive Link...</div>
+        <!-- NEW: AI Help Chat -->
+        <div id="emp-view-help" class="hidden">
+            <div class="card" style="height: calc(100vh - 180px); display: flex; flex-direction: column;">
+                <div class="chat-header">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-robot" style="color: var(--accent);"></i>
+                        <span>Nexus AI Assistant</span>
                     </div>
                 </div>
+                <div class="chat-messages" id="ai-message-container">
+                    <div class="message-bubble msg-received ai-bubble">
+                        Hello! I am Nexus AI. I can help you with attendance, leaves, or connect you to the Admin. Try asking "How to check in?" or "Contact Admin".
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <input type="text" id="ai-input" placeholder="Ask AI anything..." style="flex:1;" onkeypress="if(event.key==='Enter') sendAIMessage()">
+                    <button class="btn btn-accent" style="width: auto; border-radius: 50%; width: 44px; height: 44px; padding: 0;" onclick="sendAIMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
             </div>
-        </section>
-    </main>
+        </div>
 
-    <!-- Navigation: Admin -->
-    <nav id="admin-nav" class="tab-nav hidden">
-        <button class="tab-btn active" onclick="switchAdminTab('dashboard', this)"><i class="fa-solid fa-chart-pie"></i></button>
-        <button class="tab-btn" onclick="switchAdminTab('team', this)"><i class="fa-solid fa-users"></i></button>
-        <button class="tab-btn" onclick="switchAdminTab('advances', this)"><i class="fa-solid fa-money-bill-transfer"></i></button>
-        <button class="tab-btn" onclick="switchAdminTab('leaves', this)"><i class="fa-regular fa-calendar-check"></i></button>
-        <button class="tab-btn" onclick="switchAdminTab('msg', this)"><i class="fa-solid fa-comments"></i></button>
-        <button class="tab-btn" onclick="switchAdminTab('reports', this)"><i class="fa-solid fa-file-invoice"></i></button>
-        <button class="tab-btn" onclick="switchAdminTab('cloud', this)"><i class="fa-solid fa-cloud"></i></button>
-        <button class="tab-btn" onclick="switchAdminTab('settings', this)"><i class="fa-solid fa-cogs"></i></button>
-        <button class="tab-btn" onclick="openAdminProfileModal()"><i class="fa-solid fa-user-shield"></i></button>
-        <button class="tab-btn exit-btn" onclick="logout()"><i class="fa-solid fa-power-off"></i></button>
-    </nav>
-    
-    <!-- Navigation: Employee -->
-    <nav id="emp-nav" class="tab-nav hidden">
-        <button class="tab-btn active" onclick="switchEmpTab('home', this)"><i class="fa-solid fa-house"></i></button>
-        <button class="tab-btn" onclick="switchEmpTab('call', this)"><i class="fa-solid fa-phone"></i></button>
-        <button class="tab-btn" onclick="switchEmpTab('chat', this)"><i class="fa-solid fa-comments"></i></button>
-        <button class="tab-btn" onclick="switchEmpTab('cloud', this)"><i class="fa-solid fa-cloud"></i></button>
-        <button class="tab-btn exit-btn" onclick="logout()"><i class="fa-solid fa-power-off"></i></button>
+    </section>
+
+    <!-- ADMIN NAV -->
+    <nav id="admin-nav" class="nav-dock hidden">
+        <button class="nav-btn active" onclick="switchAdminTab('dashboard')"><i class="fa-solid fa-chart-pie"></i></button>
+        <button class="nav-btn" onclick="switchAdminTab('company')"><i class="fa-solid fa-building"></i></button>
+        <button class="nav-btn" onclick="switchAdminTab('team')"><i class="fa-solid fa-users"></i></button>
+        <button class="nav-btn" onclick="switchAdminTab('pending')"><i class="fa-solid fa-file-invoice"></i></button>
+        <button class="nav-btn" onclick="switchAdminTab('manager')"><i class="fa-solid fa-clock-rotate-left"></i></button>
+        <button class="nav-btn" onclick="switchAdminTab('broadcast')"><i class="fa-solid fa-bullhorn"></i></button>
+        <button class="nav-btn" onclick="switchAdminTab('reports')"><i class="fa-solid fa-table"></i></button>
+        <button class="nav-btn" onclick="switchAdminTab('map')"><i class="fa-solid fa-map-location-dot"></i></button>
+        <button class="nav-btn" onclick="switchAdminTab('settings')"><i class="fa-solid fa-gears"></i></button>
+        <button class="nav-btn exit" onclick="logout()"><i class="fa-solid fa-power-off"></i></button>
     </nav>
 
-    <div id="toast-box" class="toast-container"></div>
+    <!-- EMP NAV -->
+    <nav id="emp-nav" class="nav-dock hidden">
+        <button class="nav-btn active" onclick="switchEmpTab('home')"><i class="fa-solid fa-house"></i></button>
+        <button class="nav-btn" onclick="switchEmpTab('call')"><i class="fa-solid fa-file-upload"></i></button>
+        <button class="nav-btn" onclick="switchEmpTab('profile')"><i class="fa-solid fa-user-gear"></i></button>
+        <button class="nav-btn" onclick="switchEmpTab('drive')"><i class="fa-brands fa-google-drive"></i></button>
+        <button class="nav-btn" onclick="switchEmpTab('chat')"><i class="fa-solid fa-comments"></i></button>
+        <button class="nav-btn" style="color:var(--accent);" onclick="switchEmpTab('help')"><i class="fa-solid fa-robot"></i></button>
+        <button class="nav-btn exit" onclick="logout()"><i class="fa-solid fa-power-off"></i></button>
+    </nav>
 
-    <!-- Modals -->
-    <!-- Call Modal -->
-    <div id="callModal" class="modal-overlay">
+    <!-- TOAST CONTAINER -->
+    <div id="toast-container"></div>
+
+    <!-- MODALS -->
+    <!-- Company Modal -->
+    <div id="companyModal" class="modal-overlay">
         <div class="modal-content">
-            <h2>Upload Call Report</h2>
-            <p class="text-xs text-muted mb-4">Upload link to: <span id="call-modal-target-email" class="text-accent font-bold">admin@company.com</span></p>
-            
-            <div class="input-group"><label>Complain Number</label><input type="text" id="call-comp-no"></div>
-            <div class="input-group"><label>Date</label><input type="date" id="call-date"></div>
-            <div class="input-group"><label>Remark</label><textarea id="call-remark" rows="3"></textarea></div>
-            
-            <!-- Upload Link Only -->
+            <h2>Add Company</h2>
+            <div class="input-group"><label>Name</label><input type="text" id="comp-name"></div>
+            <div class="flex" style="justify-content: flex-end; gap:10px; margin-top:20px;">
+                <button class="btn btn-ghost" onclick="closeModal('companyModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addCompany()">Add Company</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee Modal -->
+    <div id="empModal" class="modal-overlay">
+        <div class="modal-content">
+            <h2>Add Employee</h2>
+            <div class="input-group"><label>Name</label><input type="text" id="new-emp-name"></div>
+            <div class="input-group"><label>ID</label><input type="text" id="new-emp-id"></div>
+            <div class="input-group"><label>Password</label><input type="text" id="new-emp-pass"></div>
             <div class="input-group">
-                <label>Upload Report Link (Drive/P-Cloud)</label>
-                <div class="flex gap-2">
-                    <input type="text" id="call-drive-link" placeholder="Paste Report Link here">
-                    <button class="btn btn-primary" style="width: auto;" onclick="window.open('https://drive.google.com/', '_blank')"><i class="fa-brands fa-google-drive"></i> Drive</button>
-                    <button class="btn btn-success" style="width: auto;" onclick="window.open('https://my.pcloud.com/', '_blank')"><i class="fa-solid fa-cloud"></i> P-Cloud</button>
+                <label>Email (Gmail)</label>
+                <div class="flex" style="gap:5px;">
+                    <input type="email" id="new-emp-email" placeholder="user@gmail.com">
+                    <select id="new-emp-email-type" style="width: auto;">
+                        <option value="Official">Official</option>
+                        <option value="Personal">Personal</option>
+                    </select>
                 </div>
             </div>
-
-            <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="saveCallRecord()">Upload Report</button>
-                <button class="btn btn-ghost w-full" onclick="closeModal('callModal')">Cancel</button>
+            <div class="grid grid-2">
+                <div class="input-group"><label>Phone</label><input type="text" id="new-emp-phone"></div>
+                <div class="input-group"><label>Birthday</label><input type="date" id="new-emp-dob"></div>
+            </div>
+            <div class="input-group"><label>Photo URL</label><input type="text" id="new-emp-photo" placeholder="https://i.ibb.co/..."></div>
+            <div class="input-group"><label>Company</label><select id="new-emp-comp"></select></div>
+            <div class="flex" style="justify-content: flex-end; gap:10px; margin-top:20px;">
+                <button class="btn btn-ghost" onclick="closeModal('empModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="addEmployee()">Add Employee</button>
             </div>
         </div>
     </div>
 
-    <!-- File Upload Modal -->
-    <div id="uploadModal" class="modal-overlay">
+    <!-- Edit Employee Modal (Admin) -->
+    <div id="editEmpModal" class="modal-overlay">
         <div class="modal-content">
-            <h2>Upload File</h2>
-            <div class="input-group"><label>Select File</label><input type="file" id="admin-upload-file"></div>
-            <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="uploadAdminFile()">Save Link</button>
-                <button class="btn btn-ghost w-full" onclick="closeModal('uploadModal')">Cancel</button>
+            <h2>Edit Employee</h2>
+            <input type="hidden" id="edit-emp-hidden-id">
+            <div class="input-group"><label>Name</label><input type="text" id="admin-edit-emp-name"></div>
+            <div class="input-group"><label>New Password</label><input type="text" id="admin-edit-emp-pass" placeholder="Leave blank to keep"></div>
+            <div class="input-group">
+                <label>Email (Gmail)</label>
+                <div class="flex" style="gap:5px;">
+                    <input type="email" id="admin-edit-emp-email" placeholder="user@gmail.com">
+                    <select id="admin-edit-emp-email-type" style="width: auto;">
+                        <option value="Official">Official</option>
+                        <option value="Personal">Personal</option>
+                    </select>
+                </div>
+            </div>
+            <div class="grid grid-2">
+                <div class="input-group"><label>Phone</label><input type="text" id="admin-edit-emp-phone"></div>
+                <div class="input-group"><label>Birthday</label><input type="date" id="admin-edit-emp-dob"></div>
+            </div>
+            <div class="input-group"><label>Company</label><select id="admin-edit-emp-comp"></select></div>
+            <div class="flex" style="justify-content: flex-end; gap:10px; margin-top:20px;">
+                <button class="btn btn-ghost" onclick="closeModal('editEmpModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveAdminEditEmployee()">Update</button>
             </div>
         </div>
     </div>
-    
+
     <!-- Advance Modal -->
-    <div id="advReqModal" class="modal-overlay">
+    <div id="advModal" class="modal-overlay">
         <div class="modal-content">
             <h2>Request Advance</h2>
-            <div class="input-group"><label>Amount (INR)</label><input type="number" id="adv-amount"></div>
-            <div class="input-group"><label>Reason</label><textarea id="adv-reason" rows="2"></textarea></div>
-            <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="submitAdvance()">Send Request</button>
-                <button class="btn btn-ghost w-full" onclick="closeModal('advReqModal')">Cancel</button>
+            <div class="input-group"><label>Amount</label><input type="number" id="req-amt"></div>
+            <div class="input-group"><label>Reason</label><textarea id="req-reason"></textarea></div>
+            <div class="flex" style="justify-content: flex-end; gap:10px; margin-top:20px;">
+                <button class="btn btn-ghost" onclick="closeModal('advModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitReq('advance')">Submit</button>
             </div>
         </div>
     </div>
 
     <!-- Leave Modal -->
-    <div id="leaveReqModal" class="modal-overlay">
+    <div id="leaveModal" class="modal-overlay">
         <div class="modal-content">
-            <h2>Apply for Leave</h2>
-            <div class="input-group"><label>Leave Type</label>
-                <select id="leave-type">
-                    <option value="Sick Leave">Sick Leave</option>
-                    <option value="Casual Leave">Casual Leave</option>
-                    <option value="Earned Leave">Earned Leave</option>
-                </select>
+            <h2>Apply Leave</h2>
+            <div class="input-group"><label>Type</label><select id="req-type"><option>Sick</option><option>Casual</option></select></div>
+            <div class="grid grid-2">
+                <div class="input-group"><label>Start</label><input type="date" id="req-start"></div>
+                <div class="input-group"><label>End</label><input type="date" id="req-end"></div>
             </div>
-            <div class="input-group"><label>Start Date</label><input type="date" id="leave-start"></div>
-            <div class="input-group mb-0"><label>End Date</label><input type="date" id="leave-end"></div>
-            <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="submitLeave()">Submit Request</button>
-                <button class="btn btn-ghost w-full" onclick="closeModal('leaveReqModal')">Cancel</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- New Chat Modal -->
-    <div id="newChatModal" class="modal-overlay">
-        <div class="modal-content">
-            <h2>New Conversation</h2>
-            <div class="input-group">
-                <label>Recipients</label>
-                <select id="new-chat-recipients" multiple style="height: 150px;">
-                    <!-- Populated via JS -->
-                </select>
-            </div>
-            <div class="flex gap-2 mt-4">
-                <button class="btn btn-primary w-full" onclick="startNewChat()">Start Chat</button>
-                <button class="btn btn-ghost w-full" onclick="closeModal('newChatModal')">Cancel</button>
+            <div class="flex" style="justify-content: flex-end; gap:10px; margin-top:20px;">
+                <button class="btn btn-ghost" onclick="closeModal('leaveModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="submitReq('leave')">Submit</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- CONFIGURATION ---
-        const CONFIG = {
-            JSON_BIN_ID: '6989fe3fae596e708f1dd133',
-            JSON_BIN_KEY: '$2a$10$31RRwjp5GFNYo/puv4Q/wOln3poLiM/SM3lXde69LjAIKizHfzYSe',
-        };
-
+        // --- CONFIG & STATE ---
         const DEFAULT_DB = {
-            admins: [{ id: 'admin', pass: 'admin', name: 'Super Admin', photo: '', mobile: '', email: '' }],
-            employees: [],
+            admin: { id: 'admin', pass: 'admin', name: 'Super Admin', photo: '' },
             companies: [],
-            advances: [],
-            leaves: [],
+            employees: [],
             attendance: [],
-            logs: [],
-            calls: [], // { id, empId, compNo, date, remark, driveLink, fileName, fileUrl }
-            messages: [],
+            requests: [],
+            calls: [],
             chats: [],
+            messages: [],
             settings: {
-                binId: CONFIG.JSON_BIN_ID,
-                masterKey: CONFIG.JSON_BIN_KEY,
-                imgbbKey: '',
-                senderEmail: '',
-                trackingEnabled: true,
-                
-                // Automation Settings
-                waToken: "",
-                waInstanceId: "",
-                waCheckInGroup: "",
-                waBirthdayGroup: "",
-                checkInTime: "09:30",
-                
-                // Drive Settings
-                gdriveLink: "",
-                pcloudLink: "",
-                activeDrive: "gdrive", // 'gdrive' or 'pcloud'
-                
-                // Call Report Settings
-                callReportEmail: "admin@company.com",
-                callReportDest: "gdrive" // 'gdrive' or 'pcloud'
+                masterKey: '', binId: '', imgbb: '',
+                waCheckin: '', waBday: '',
+                leaveTo: '', leaveCc: '', leaveSub: '', leaveBody: '',
+                attTo: '', attCc: ''
             }
         };
 
         let APP = {
-            user: null,
-            db: JSON.parse(JSON.stringify(DEFAULT_DB)),
-            map: null,
-            isLocalMode: false,
-            activeChatId: null
+            user: null, role: null, db: null, map: null, activeChatId: null
         };
 
         // --- INIT ---
         window.onload = () => {
-            loadSettings();
             loadData();
             startClock();
-            document.getElementById('report-date-input').value = new Date().toISOString().split('T')[0];
+            requestBgPermission();
+            detectAdminDevice();
         };
 
-        // --- DATA & AUTH ---
+        // --- DATA LAYER ---
         function loadData() {
-            if (APP.db.settings.binId && APP.db.settings.masterKey && !APP.isLocalMode) {
-                fetch(`https://api.jsonbin.io/v3/b/${APP.db.settings.binId}/latest`, {
-                    headers: { 'X-Master-Key': APP.db.settings.masterKey }
-                })
-                .then(r => r.json())
-                .then(res => {
-                    if(res.record) {
-                        APP.db = { ...DEFAULT_DB, ...res.record };
-                        APP.db.settings = { ...DEFAULT_DB.settings, ...res.record.settings };
-                        // Ensure arrays exist
-                        if(!APP.db.chats) APP.db.chats = [];
-                        if(!APP.db.messages) APP.db.messages = [];
-                        if(!APP.db.calls) APP.db.calls = [];
-                        
-                        loadSettings();
-                        renderUI();
-                        updateCloudStatus('online');
-                    }
-                })
-                .catch(() => {
-                    loadLocalBackup();
-                    updateCloudStatus('error');
-                });
+            const local = localStorage.getItem('nexus_hr_final');
+            if(local) APP.db = JSON.parse(local);
+            else APP.db = JSON.parse(JSON.stringify(DEFAULT_DB));
+
+            if(APP.db.settings.binId && APP.db.settings.masterKey) {
+                syncFromCloud();
             } else {
-                loadLocalBackup();
-                updateCloudStatus(APP.isLocalMode ? 'local' : 'error');
+                updateCloudStatus('Local');
+                renderUI(); 
             }
         }
 
-        function loadLocalBackup() {
-            const local = localStorage.getItem('nexushr_db_v3');
-            if(local) APP.db = { ...DEFAULT_DB, ...JSON.parse(local) };
-            if(!APP.db.chats) APP.db.chats = [];
-            if(!APP.db.messages) APP.db.messages = [];
-            if(!APP.db.calls) APP.db.calls = [];
-            renderUI();
-        }
-
         function saveData() {
-            localStorage.setItem('nexushr_db_v3', JSON.stringify(APP.db));
-            if(!APP.isLocalMode) syncToCloud();
+            localStorage.setItem('nexus_hr_final', JSON.stringify(APP.db));
+            syncToCloud(); 
         }
 
         function syncToCloud() {
             if(!APP.db.settings.binId || !APP.db.settings.masterKey) return;
-            document.getElementById('cloud-indicator').textContent = 'Syncing...';
             fetch(`https://api.jsonbin.io/v3/b/${APP.db.settings.binId}`, {
                 method: 'PUT',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': APP.db.settings.masterKey 
-                },
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': APP.db.settings.masterKey },
                 body: JSON.stringify(APP.db)
+            }).then(() => updateCloudStatus('Cloud Synced')).catch(() => updateCloudStatus('Sync Error'));
+        }
+
+        function syncFromCloud() {
+            updateCloudStatus('Syncing...');
+            fetch(`https://api.jsonbin.io/v3/b/${APP.db.settings.binId}/latest`, {
+                headers: { 'X-Master-Key': APP.db.settings.masterKey }
             })
-            .then(() => updateCloudStatus('online'))
-            .catch(() => updateCloudStatus('error'));
+            .then(res => res.ok ? res.json() : Promise.reject())
+            .then(data => { APP.db = { ...DEFAULT_DB, ...data.record }; saveData(); updateCloudStatus('Cloud Synced'); renderUI(); })
+            .catch(() => { updateCloudStatus('Sync Error'); renderUI(); });
         }
 
-        function updateCloudStatus(status) {
-            const el = document.getElementById('cloud-indicator');
-            if(status === 'online') { el.textContent = 'Cloud Synced'; el.className = 'badge online'; }
-            else if(status === 'error') { el.textContent = 'Cloud Error'; el.className = 'badge rejected'; }
-            else { el.textContent = 'Local Mode'; el.className = 'badge pending'; }
+        // --- BACKUP / RESTORE ---
+        function downloadBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(APP.db));
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", "nexus_hr_backup_" + new Date().toISOString().split('T')[0] + ".json");
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
         }
 
+        function restoreBackup(input) {
+            const file = input.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    if(json.employees && json.admin) {
+                        APP.db = json;
+                        saveData();
+                        showToast('Database Restored Successfully');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showToast('Invalid Database File', 'error');
+                    }
+                } catch(err) { showToast('Error parsing file', 'error'); }
+            };
+            reader.readAsText(file);
+        }
+
+        // --- ADMIN DEVICE DETECTION ---
+        function detectAdminDevice() {
+            const isSuperAdminDevice = localStorage.getItem('nexus_super_device') === 'true';
+            if(isSuperAdminDevice) {
+                console.log("Super Admin Device Detected. Auto-Sync Enabled.");
+                if(APP.db.settings.masterKey) syncFromCloud();
+            }
+        }
+
+        function markSuperAdminDevice() {
+            localStorage.setItem('nexus_super_device', 'true');
+            showToast('Device marked as Super Admin. Auto-sync enabled.');
+        }
+
+        // --- AUTH ---
         function handleLogin(e) {
             e.preventDefault();
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
-            if(u === APP.db.admins[0].id && p === APP.db.admins[0].pass) {
-                postLogin(APP.db.admins[0], 'admin');
-                return;
+
+            if(u === APP.db.admin.id && p === APP.db.admin.pass) {
+                postLogin('admin', APP.db.admin);
+            } else {
+                const emp = APP.db.employees.find(x => x.id === u && x.pass === p);
+                if(emp) {
+                    // Check Email match with device (Simulation)
+                    if(emp.email && emp.email.includes('@')) {
+                        console.log("Email Verified logic placeholder.");
+                    }
+                    postLogin('emp', emp);
+                }
+                else showToast('Invalid Credentials', 'error');
             }
-            const emp = APP.db.employees.find(x => x.id === u && x.pass === p);
-            if(emp) { postLogin(emp, 'employee'); return; }
-            showToast('Invalid credentials', 'error');
         }
 
-        function postLogin(user, role) {
+        function postLogin(role, user) {
             APP.user = user;
+            APP.role = role;
             document.getElementById('login-screen').classList.add('hidden');
+            
             if(role === 'admin') {
                 document.getElementById('admin-panel').classList.remove('hidden');
                 document.getElementById('admin-nav').classList.remove('hidden');
-                renderAdminDashboard();
-                setTimeout(initMap, 100);
+                switchAdminTab('dashboard');
+                setTimeout(initMap, 500);
             } else {
-                document.getElementById('employee-panel').classList.remove('hidden');
+                document.getElementById('emp-panel').classList.remove('hidden');
                 document.getElementById('emp-nav').classList.remove('hidden');
-                renderEmployeeDashboard();
-                loadEmpChatContacts();
+                switchEmpTab('home');
+                updateEmpDashboard();
+                renderMyReqs();
+                renderMyCalls();
+                loadChatContacts();
+            }
+            showNotification(`Welcome back, ${user.name}`, 'success');
+        }
+
+        function logout() { location.reload(); }
+
+        function renderUI() {
+            if(APP.role === 'admin' && document.getElementById('admin-panel').offsetParent !== null) {
+                updateDashboard();
             }
         }
 
-        // --- CHAT SYSTEM ---
-        function loadEmpChatContacts() {
-            const list = document.getElementById('emp-contact-list');
-            list.innerHTML = '';
-
-            const myChats = APP.db.chats.filter(c => c.participants.includes(APP.user.id));
-            if(myChats.length === 0) {
-                list.innerHTML = '<div class="p-3 text-center text-muted">No active chats.<br>Click + to start.</div>';
-                return;
-            }
-
-            myChats.forEach(chat => {
-                let otherIds = chat.participants.filter(id => id !== APP.user.id);
-                let names = otherIds.map(id => id === 'admin' ? 'Admin' : (APP.db.employees.find(e=>e.id===id)?.name || 'Unknown')).join(', ');
-                const msgs = APP.db.messages.filter(m => m.chatId === chat.id);
-                const lastMsg = msgs.length > 0 ? msgs[msgs.length - 1].text : 'No messages';
-                const time = msgs.length > 0 ? new Date(msgs[msgs.length - 1].timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-
-                const item = document.createElement('div');
-                item.className = `contact-item ${APP.activeChatId === chat.id ? 'active' : ''}`;
-                item.onclick = () => openChat(chat.id);
-                item.innerHTML = `
-                    <div class="profile-photo sm"><i class="fa-solid fa-user"></i></div>
-                    <div class="contact-info">
-                        <div class="contact-name">${names}</div>
-                        <div class="contact-last-msg">${lastMsg} <span style="float:right; opacity:0.5; font-size:0.7em;">${time}</span></div>
-                    </div>
-                `;
-                list.appendChild(item);
-            });
-        }
-
-        function openChat(chatId) {
-            APP.activeChatId = chatId;
-            loadEmpChatContacts();
-            const chat = APP.db.chats.find(c => c.id === chatId);
-            let names = chat.participants.filter(id => id !== APP.user.id).map(id => id === 'admin' ? 'Admin' : (APP.db.employees.find(e=>e.id===id)?.name || 'Unknown')).join(', ');
-            document.getElementById('emp-current-chat-name').textContent = names;
-
-            const container = document.getElementById('emp-messages-container');
-            container.innerHTML = '';
-            const msgs = APP.db.messages.filter(m => m.chatId === chatId).sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+        // --- NAVIGATION ---
+        function switchAdminTab(tab) {
+            document.querySelectorAll('#admin-panel > div').forEach(el => el.classList.add('hidden'));
+            document.getElementById('view-' + tab).classList.remove('hidden');
             
-            msgs.forEach(m => {
-                const isMe = m.senderId === APP.user.id;
-                const bubble = document.createElement('div');
-                bubble.className = `message-bubble ${isMe ? 'msg-sent' : 'msg-received'}`;
-                bubble.innerHTML = `${escapeHtml(m.text)}<span class="msg-meta">${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>`;
-                container.appendChild(bubble);
-            });
-            container.scrollTop = container.scrollHeight;
-            document.getElementById('emp-chat-main').classList.add('mobile-visible');
+            const btns = document.querySelectorAll('#admin-nav .nav-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            const idx = ['dashboard','company','team','pending','manager','broadcast','reports','map','settings'].indexOf(tab);
+            if(idx > -1) btns[idx].classList.add('active');
+
+            if(tab === 'dashboard') updateDashboard();
+            if(tab === 'team') renderTeam();
+            if(tab === 'company') renderCompanies();
+            if(tab === 'pending') renderPending();
+            if(tab === 'manager') loadAttendanceManager();
+            if(tab === 'broadcast') loadBroadcastRecipients();
+            if(tab === 'reports') generateReport();
+            if(tab === 'map') setTimeout(initMap, 100);
+            if(tab === 'settings') loadSettings();
         }
 
-        function sendEmpMessage() {
-            const input = document.getElementById('emp-chat-input');
-            const text = input.value.trim();
-            if(!text || !APP.activeChatId) return;
-            APP.db.messages.push({ id: Date.now(), chatId: APP.activeChatId, senderId: APP.user.id, text: text, timestamp: new Date().toISOString() });
-            saveData();
-            input.value = '';
-            openChat(APP.activeChatId);
-            loadEmpChatContacts();
+        function switchEmpTab(tab) {
+            document.querySelectorAll('#emp-panel > div').forEach(el => el.classList.add('hidden'));
+            document.getElementById('emp-view-' + tab).classList.remove('hidden');
+            
+            const btns = document.querySelectorAll('#emp-nav .nav-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            const idx = ['home','call','profile','drive','chat','help'].indexOf(tab);
+            if(idx > -1) btns[idx].classList.add('active');
+
+            if(tab === 'drive') loadDriveFiles();
+            if(tab === 'chat') loadChatContacts();
+        }
+
+        // --- ADMIN LOGIC ---
+        function updateDashboard() {
+            document.getElementById('adm-stat-emp').textContent = APP.db.employees.length;
+            document.getElementById('adm-stat-req').textContent = APP.db.requests.filter(r => r.status === 'Pending').length;
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('adm-stat-pres').textContent = APP.db.attendance.filter(a => a.date === today).length;
+        }
+
+        function renderCompanies() {
+            const list = document.getElementById('company-list');
+            list.innerHTML = APP.db.companies.map(c => `
+                <div class="list-item">
+                    <div class="list-content"><h4>${c.name}</h4><p>ID: ${c.id}</p></div>
+                    <button class="btn btn-sm btn-danger" onclick="deleteCompany('${c.id}')"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            `).join('') || '<div class="text-center p-4 text-muted">No companies.</div>';
+        }
+
+        function addCompany() {
+            const name = document.getElementById('comp-name').value;
+            if(!name) return showToast('Name required', 'error');
+            APP.db.companies.push({ id: Date.now().toString(), name });
+            saveData(); closeModal('companyModal'); renderCompanies(); showToast('Company Added');
         }
         
-        function openNewChatModal() {
-            const select = document.getElementById('new-chat-recipients');
-            select.innerHTML = '';
-            const adminOpt = document.createElement('option');
-            adminOpt.value = 'admin';
-            adminOpt.textContent = 'Admin (Super Admin)';
-            select.appendChild(adminOpt);
-            APP.db.employees.forEach(e => {
-                if(e.id !== APP.user.id) {
-                    const opt = document.createElement('option');
-                    opt.value = e.id;
-                    opt.textContent = `${e.name} (${e.id})`;
-                    select.appendChild(opt);
-                }
-            });
-            document.getElementById('newChatModal').classList.add('open');
+        function deleteCompany(id) {
+            if(!confirm('Delete company?')) return;
+            APP.db.companies = APP.db.companies.filter(c => c.id !== id);
+            saveData(); renderCompanies();
         }
 
-        function startNewChat() {
-            const select = document.getElementById('new-chat-recipients');
-            const selected = Array.from(select.selectedOptions).map(o => o.value);
-            if(selected.length === 0) return showToast('Select recipient', 'error');
-            const participants = [APP.user.id, ...selected].sort();
+        function renderTeam() {
+            const list = document.getElementById('team-list');
+            const compSelect = document.getElementById('new-emp-comp');
+            const editCompSelect = document.getElementById('admin-edit-emp-comp');
+            const options = APP.db.companies.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+            compSelect.innerHTML = options;
+            if(editCompSelect) editCompSelect.innerHTML = options;
+
+            list.innerHTML = APP.db.employees.map(e => `
+                <div class="list-item">
+                    <div class="flex" style="align-items:center; gap:12px;">
+                        <div class="avatar">${e.photo ? `<img src="${e.photo}">` : e.name.charAt(0)}</div>
+                        <div class="list-content">
+                            <h4>${e.name} <span class="badge pending">${e.comp || 'N/A'}</span></h4>
+                            <p>ID: ${e.id} | Phone: ${e.phone} | ${e.email || ''}</p>
+                        </div>
+                    </div>
+                    <div class="flex" style="gap:5px;">
+                        <button class="btn btn-sm btn-ghost" onclick="openEditEmpModal('${e.id}')"><i class="fa-solid fa-pen"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteEmp('${e.id}')"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center p-4 text-muted">No employees.</div>';
+        }
+
+        function addEmployee() {
+            const name = document.getElementById('new-emp-name').value;
+            const id = document.getElementById('new-emp-id').value;
+            const pass = document.getElementById('new-emp-pass').value;
+            const email = document.getElementById('new-emp-email').value;
+            const emailType = document.getElementById('new-emp-email-type').value;
+            if(!name || !id || !pass) return showToast('Name, ID & Password required', 'error');
+
+            APP.db.employees.push({
+                id, pass, name, email, emailType,
+                photo: document.getElementById('new-emp-photo').value, 
+                comp: document.getElementById('new-emp-comp').value,
+                phone: document.getElementById('new-emp-phone').value,
+                dob: document.getElementById('new-emp-dob').value
+            });
+            saveData(); closeModal('empModal'); renderTeam(); showToast('Employee Added');
+        }
+
+        function deleteEmp(id) {
+            if(!confirm('Delete Employee?')) return;
+            APP.db.employees = APP.db.employees.filter(e => e.id !== id);
+            saveData(); renderTeam();
+        }
+
+        function openEditEmpModal(id) {
+            const emp = APP.db.employees.find(e => e.id === id);
+            if(!emp) return;
+            document.getElementById('edit-emp-hidden-id').value = id;
+            document.getElementById('admin-edit-emp-name').value = emp.name;
+            document.getElementById('admin-edit-emp-pass').value = ''; // Don't show pass
+            document.getElementById('admin-edit-emp-email').value = emp.email || '';
+            document.getElementById('admin-edit-emp-email-type').value = emp.emailType || 'Official';
+            document.getElementById('admin-edit-emp-comp').value = emp.comp || '';
+            document.getElementById('admin-edit-emp-phone').value = emp.phone || '';
+            document.getElementById('admin-edit-emp-dob').value = emp.dob || '';
+            openModal('editEmpModal');
+        }
+
+        function saveAdminEditEmployee() {
+            const id = document.getElementById('edit-emp-hidden-id').value;
+            const emp = APP.db.employees.find(e => e.id === id);
+            if(emp) {
+                emp.name = document.getElementById('admin-edit-emp-name').value;
+                emp.comp = document.getElementById('admin-edit-emp-comp').value;
+                emp.phone = document.getElementById('admin-edit-emp-phone').value;
+                emp.email = document.getElementById('admin-edit-emp-email').value;
+                emp.emailType = document.getElementById('admin-edit-emp-email-type').value;
+                emp.dob = document.getElementById('admin-edit-emp-dob').value;
+                const newPass = document.getElementById('admin-edit-emp-pass').value;
+                if(newPass) emp.pass = newPass;
+                saveData(); closeModal('editEmpModal'); renderTeam(); showToast('Employee Updated');
+            }
+        }
+
+        function renderPending() {
+            const list = document.getElementById('pending-list');
+            const pending = APP.db.requests.filter(r => r.status === 'Pending');
+            
+            list.innerHTML = pending.map(r => `
+                <div class="list-item">
+                    <div class="list-content">
+                        <h4>${r.empName} <span class="badge" style="background:rgba(255,255,255,0.1); color:white;">${r.type}</span></h4>
+                        <p>${r.type === 'Advance' ? 'Amount: '+r.detail : 'Date: '+r.detail}</p>
+                    </div>
+                    <div class="flex" style="gap:8px;">
+                        <button class="btn btn-sm btn-success" onclick="processReq(${r.id}, 'Approved')"><i class="fa-solid fa-check"></i></button>
+                        <button class="btn btn-sm btn-danger" onclick="processReq(${r.id}, 'Rejected')"><i class="fa-solid fa-xmark"></i></button>
+                        <button class="btn btn-sm btn-ghost" title="Delete Request" onclick="deleteReq(${r.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center p-4 text-muted">No pending requests.</div>';
+        }
+
+        function processReq(id, status) {
+            const req = APP.db.requests.find(r => r.id === id);
+            if(req) { 
+                req.status = status; 
+                // Auto-email simulation
+                if(status === 'Approved') sendAutoEmail(req);
+                saveData(); renderPending(); showToast(`Request ${status}`); 
+            }
+        }
+
+        function sendAutoEmail(req) {
+            // Mock Email Sending Logic based on settings
+            if(req.type === 'Leave' && APP.db.settings.leaveTo) {
+                console.log(`Sending Leave Email to ${APP.db.settings.leaveTo}`);
+                showToast(`Email notification sent to ${APP.db.settings.leaveTo}`);
+            }
+        }
+
+        function deleteReq(id) {
+            if(!confirm('Delete this request?')) return;
+            APP.db.requests = APP.db.requests.filter(r => r.id !== id);
+            saveData(); renderPending(); showToast('Request Deleted');
+        }
+
+        // --- BROADCAST MESSAGING ---
+        function loadBroadcastRecipients() {
+            const select = document.getElementById('bc-target');
+            select.innerHTML = '<option value="all">All Employees</option>' + 
+                APP.db.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+        }
+
+        function sendBroadcast() {
+            const target = document.getElementById('bc-target').value;
+            const msg = document.getElementById('bc-msg').value;
+            const type = document.getElementById('bc-type').value;
+            
+            if(!msg) return showToast('Message cannot be empty', 'error');
+
+            let recipients = [];
+            if(target === 'all') {
+                recipients = APP.db.employees.map(e => e.id);
+            } else {
+                recipients = [target];
+            }
+
+            recipients.forEach(empId => {
+                // Create a chat or add message
+                const participants = ['admin', empId].sort();
+                const chatId = participants.join('-');
+                let chat = APP.db.chats.find(c => c.id === chatId);
+                if(!chat) { chat = { id: chatId, participants: participants }; APP.db.chats.push(chat); }
+                
+                APP.db.messages.push({
+                    id: Date.now() + Math.random(),
+                    chatId: chatId,
+                    senderId: 'admin',
+                    category: type,
+                    text: msg,
+                    timestamp: new Date().toISOString()
+                });
+            });
+
+            saveData();
+            document.getElementById('bc-msg').value = '';
+            showToast('Broadcast Sent Successfully');
+        }
+
+        // --- ATTENDANCE MANAGER (ADMIN) ---
+        function loadAttendanceManager() {
+            const empSelect = document.getElementById('adm-mgr-emp');
+            empSelect.innerHTML = '<option value="">Select Employee...</option>' + APP.db.employees.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            document.getElementById('adm-mgr-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('adm-bulk-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('adm-hist-date').value = new Date().toISOString().split('T')[0];
+            renderManagerHistory();
+        }
+
+        function switchMgrTab(tab) {
+            ['single', 'bulk', 'history'].forEach(t => document.getElementById('mgr-tab-'+t).classList.add('hidden'));
+            document.getElementById('mgr-tab-'+tab).classList.remove('hidden');
+        }
+
+        function fillRandomCoords() {
+            document.getElementById('adm-mgr-lat').value = (19.0760 + (Math.random() * 0.1)).toFixed(6);
+            document.getElementById('adm-mgr-lng').value = (72.8777 + (Math.random() * 0.1)).toFixed(6);
+        }
+
+        function adminAddAttendance() {
+            const empId = document.getElementById('adm-mgr-emp').value;
+            const date = document.getElementById('adm-mgr-date').value;
+            const status = document.getElementById('adm-mgr-status').value;
+            const lat = document.getElementById('adm-mgr-lat').value;
+            const lng = document.getElementById('adm-mgr-lng').value;
+            
+            if(!empId || !date) return showToast('Employee and Date required', 'error');
+
+            const emp = APP.db.employees.find(e => e.id === empId);
+            
+            APP.db.attendance = APP.db.attendance.filter(a => !(a.empId === empId && a.date === date));
+
+            const record = {
+                id: Date.now(),
+                empId: empId,
+                empName: emp.name,
+                date: date,
+                status: status,
+                inTime: status === 'P' ? document.getElementById('adm-mgr-in').value : '-',
+                outTime: status === 'P' ? document.getElementById('adm-mgr-out').value : '-',
+                lat: parseFloat(lat) || 0,
+                lng: parseFloat(lng) || 0,
+                notes: document.getElementById('adm-mgr-notes').value
+            };
+
+            APP.db.attendance.push(record);
+            saveData(); renderManagerHistory(); showToast('Record Added');
+        }
+
+        function bulkMark(status) {
+            const date = document.getElementById('adm-bulk-date').value;
+            if(!date) return showToast('Date required', 'error');
+            if(!confirm(`Mark ALL employees as ${status}?`)) return;
+
+            APP.db.employees.forEach(emp => {
+                APP.db.attendance = APP.db.attendance.filter(a => !(a.empId === emp.id && a.date === date));
+                APP.db.attendance.push({
+                    id: Date.now() + Math.random(),
+                    empId: emp.id,
+                    empName: emp.name,
+                    date: date,
+                    status: status,
+                    inTime: status === 'P' ? '09:00' : '-',
+                    outTime: status === 'P' ? '18:00' : '-',
+                    lat: 0, lng: 0, notes: 'Bulk Entry'
+                });
+            });
+            saveData(); showToast('Bulk Update Complete');
+        }
+
+        function renderManagerHistory() {
+            const date = document.getElementById('adm-hist-date').value;
+            const list = document.getElementById('mgr-history-list');
+            const records = APP.db.attendance.filter(a => a.date === date);
+            
+            list.innerHTML = records.map(r => `
+                <div class="list-item">
+                    <div class="list-content">
+                        <h4>${r.empName} <span class="status-cell status-${r.status}">${r.status}</span></h4>
+                        <p>${r.inTime} - ${r.outTime}</p>
+                    </div>
+                    <div class="flex" style="gap:5px;">
+                        <button class="btn btn-sm btn-ghost" onclick="deleteAttendance(${r.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center p-4 text-muted">No records for this date.</div>';
+        }
+
+        function deleteAttendance(id) {
+            if(!confirm('Delete this record?')) return;
+            APP.db.attendance = APP.db.attendance.filter(a => a.id !== id);
+            saveData(); renderManagerHistory(); showToast('Record Deleted');
+        }
+
+        // --- REPORTS (COLOR CODED) ---
+        function generateReport() {
+            const type = document.getElementById('report-type').value;
+            const dateVal = document.getElementById('report-date').value;
+            if(!dateVal) return showToast('Select date', 'error');
+
+            let data = [];
+            if(type === 'daily') data = APP.db.attendance.filter(a => a.date === dateVal);
+            else data = APP.db.attendance.filter(a => a.date.startsWith(dateVal));
+
+            const allEmps = APP.db.employees;
+            const finalData = allEmps.map((emp, idx) => {
+                const att = data.find(d => d.empId === emp.id);
+                return {
+                    sl: idx + 1,
+                    name: emp.name,
+                    id: emp.id,
+                    date: dateVal,
+                    status: att ? att.status : 'A',
+                    in: att ? att.inTime : '-',
+                    out: att ? att.outTime : '-'
+                };
+            });
+
+            const table = document.getElementById('report-table-el');
+            table.innerHTML = `<thead><tr><th>S.No</th><th>Emp Name</th><th>Emp ID</th><th>Date</th><th>Status</th><th>In</th><th>Out</th></tr></thead><tbody>
+                ${finalData.map(d => `
+                    <tr>
+                        <td>${d.sl}</td>
+                        <td>${d.name}</td>
+                        <td>${d.id}</td>
+                        <td>${d.date}</td>
+                        <td><span class="status-cell status-${d.status}">${d.status}</span></td>
+                        <td>${d.in}</td>
+                        <td>${d.out}</td>
+                    </tr>
+                `).join('')}
+            </tbody>`;
+            
+            document.getElementById('report-preview').classList.remove('hidden');
+            showToast('Report Generated');
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            doc.text("Nexus HR - Attendance Report", 14, 15);
+            doc.autoTable({ html: '#report-table-el', startY: 20 });
+            doc.save('report.pdf');
+        }
+
+        function shareReport(platform) {
+            const text = "Here is the attendance report.";
+            if(platform === 'whatsapp') window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        }
+
+        function toggleReportDate() {
+            document.getElementById('report-date').type = document.getElementById('report-type').value === 'monthly' ? 'month' : 'date';
+        }
+
+        // --- SETTINGS ---
+        function loadSettings() {
+            const s = APP.db.settings;
+            document.getElementById('cfg-master-key').value = s.masterKey;
+            document.getElementById('cfg-bin-id').value = s.binId;
+            
+            document.getElementById('cfg-wa-checkin').value = s.waCheckin;
+            document.getElementById('cfg-wa-bday').value = s.waBday;
+
+            document.getElementById('cfg-email-leave-to').value = s.leaveTo;
+            document.getElementById('cfg-email-leave-cc').value = s.leaveCc;
+            document.getElementById('cfg-email-leave-sub').value = s.leaveSub;
+            document.getElementById('cfg-email-leave-body').value = s.leaveBody;
+
+            document.getElementById('cfg-email-att-to').value = s.attTo;
+            document.getElementById('cfg-email-att-cc').value = s.attCc;
+            
+            document.getElementById('cfg-admin-name').value = APP.db.admin.name;
+            document.getElementById('cfg-admin-photo').value = APP.db.admin.photo || '';
+            updateAdminAvatarPreview(APP.db.admin.photo);
+        }
+
+        function saveCloudSettings() {
+            APP.db.settings.masterKey = document.getElementById('cfg-master-key').value;
+            APP.db.settings.binId = document.getElementById('cfg-bin-id').value;
+            saveData(); showToast('Settings Saved'); syncFromCloud();
+        }
+
+        function saveAdminProfile() {
+            const name = document.getElementById('cfg-admin-name').value;
+            const pass = document.getElementById('cfg-admin-pass').value;
+            const photo = document.getElementById('cfg-admin-photo').value;
+            if(name) APP.db.admin.name = name;
+            if(pass) APP.db.admin.pass = pass;
+            if(photo) APP.db.admin.photo = photo;
+            saveData(); showToast('Admin Profile Updated'); updateAdminAvatarPreview(photo);
+        }
+
+        function updateAdminAvatarPreview(url) {
+            const el = document.getElementById('admin-settings-avatar');
+            el.innerHTML = url ? `<img src="${url}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">` : 'A';
+        }
+
+        function updateCloudStatus(status) {
+            const el = document.getElementById('cloud-status');
+            el.textContent = status;
+            el.className = 'badge ' + (status === 'Cloud Synced' ? 'online' : (status === 'Sync Error' ? 'rejected' : 'pending'));
+        }
+
+        function manualSync() { syncFromCloud(); showToast('Sync Triggered', 'info'); }
+
+        function testWA(type) {
+            const link = type === 'checkin' ? APP.db.settings.waCheckin : APP.db.settings.waBday;
+            if(!link) return showToast('Group Link not set', 'error');
+            const msg = type === 'checkin' ? "Reminder: Please Check In now." : "Happy Birthday! 🎂";
+            window.open(`${link}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function checkForUpdates() {
+            // Simulation
+            document.getElementById('setting-latest').textContent = 'v2.1';
+            showToast('A new version (v2.1) is available!', 'info');
+        }
+
+        // --- EMPLOYEE LOGIC ---
+        function updateEmpDashboard() {
+            document.getElementById('emp-name-display').textContent = APP.user.name;
+            document.getElementById('emp-role-display').textContent = APP.user.comp || 'Employee';
+            
+            const avatarEl = document.getElementById('emp-avatar');
+            avatarEl.innerHTML = APP.user.photo ? `<img src="${APP.user.photo}">` : APP.user.name.charAt(0).toUpperCase();
+        }
+
+        function saveEmployeeProfile() {
+            const name = document.getElementById('edit-emp-name').value;
+            const phone = document.getElementById('edit-emp-phone').value;
+            const dob = document.getElementById('edit-emp-dob').value;
+            const email = document.getElementById('edit-emp-email').value;
+            const emailType = document.getElementById('edit-emp-email-type').value;
+            const photo = document.getElementById('edit-emp-photo').value;
+            const pass = document.getElementById('edit-emp-pass').value;
+
+            if(name) APP.user.name = name;
+            if(phone) APP.user.phone = phone;
+            if(dob) APP.user.dob = dob;
+            if(email) { APP.user.email = email; APP.user.emailType = emailType; }
+            if(photo) APP.user.photo = photo;
+            if(pass) APP.user.pass = pass;
+            
+            const idx = APP.db.employees.findIndex(e => e.id === APP.user.id);
+            if(idx > -1) APP.db.employees[idx] = APP.user;
+            
+            saveData(); updateEmpDashboard(); showToast('Profile Updated');
+        }
+
+        function performCheckIn() {
+            if(!navigator.geolocation) return showToast('GPS not supported', 'error');
+            const btn = document.getElementById('btn-checkin');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Locating...';
+            
+            navigator.geolocation.getCurrentPosition(pos => {
+                const now = new Date();
+                APP.db.attendance.push({
+                    id: Date.now(),
+                    empId: APP.user.id, empName: APP.user.name,
+                    date: now.toISOString().split('T')[0],
+                    status: 'P',
+                    inTime: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+                    lat: pos.coords.latitude, lng: pos.coords.longitude,
+                    outTime: null
+                });
+                saveData();
+                document.getElementById('btn-checkin').classList.add('hidden');
+                document.getElementById('btn-checkout').classList.remove('hidden');
+                document.getElementById('att-status').classList.remove('hidden');
+                document.getElementById('checkin-time').textContent = APP.db.attendance[APP.db.attendance.length-1].inTime;
+                showToast('Checked In');
+            }, () => { btn.innerHTML = 'Check In'; showToast('Location Denied', 'error'); });
+        }
+
+        function performCheckOut() {
+            const today = new Date().toISOString().split('T')[0];
+            const record = APP.db.attendance.find(a => a.empId === APP.user.id && a.date === today && !a.outTime);
+            if(record) {
+                record.outTime = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+                saveData(); showToast('Checked Out'); location.reload();
+            }
+        }
+
+        function submitReq(type) {
+            const req = {
+                id: Date.now(),
+                empId: APP.user.id, empName: APP.user.name,
+                type: type.charAt(0).toUpperCase() + type.slice(1),
+                status: 'Pending',
+                date: new Date().toISOString().split('T')[0]
+            };
+            
+            if(type === 'advance') {
+                req.detail = document.getElementById('req-amt').value;
+                if(!req.detail) return showToast('Amount required', 'error');
+            } else {
+                const s = document.getElementById('req-start').value;
+                const e = document.getElementById('req-end').value;
+                if(!s) return showToast('Date required', 'error');
+                req.detail = `${s} to ${e}`;
+            }
+
+            APP.db.requests.push(req);
+            saveData();
+            closeModal(type === 'advance' ? 'advModal' : 'leaveModal');
+            renderMyReqs();
+            showToast('Request Submitted');
+        }
+
+        function renderMyReqs() {
+            const list = document.getElementById('my-req-list');
+            const my = APP.db.requests.filter(r => r.empId === APP.user.id).reverse();
+            list.innerHTML = my.map(r => `
+                <div class="list-item">
+                    <div class="list-content">
+                        <h4>${r.type}</h4>
+                        <p>${r.detail}</p>
+                    </div>
+                    <div class="flex" style="gap:5px; align-items:center;">
+                        <span class="badge ${r.status.toLowerCase()}">${r.status}</span>
+                        ${r.status === 'Pending' ? `<button class="btn btn-sm btn-ghost" onclick="deleteMyReq(${r.id})"><i class="fa-solid fa-trash"></i></button>` : ''}
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center p-4 text-muted">No requests.</div>';
+        }
+
+        function deleteMyReq(id) {
+            if(!confirm('Cancel this request?')) return;
+            APP.db.requests = APP.db.requests.filter(r => r.id !== id);
+            saveData(); renderMyReqs(); showToast('Request Cancelled');
+        }
+
+        function submitRegularization() {
+            const date = document.getElementById('reg-date').value;
+            const reason = document.getElementById('reg-reason').value;
+            if(!date || !reason) return showToast('Date and Reason required', 'error');
+            APP.db.requests.push({
+                id: Date.now(),
+                empId: APP.user.id, empName: APP.user.name,
+                type: 'Regularization',
+                detail: `${date} (${document.getElementById('reg-in').value} - ${document.getElementById('reg-out').value})`,
+                status: 'Pending',
+                date: new Date().toISOString().split('T')[0]
+            });
+            saveData(); showToast('Regularization Sent');
+            document.getElementById('reg-date').value = '';
+            document.getElementById('reg-reason').value = '';
+        }
+
+        function uploadDrive() {
+            showToast('Uploading...', 'info');
+            setTimeout(() => {
+                APP.db.calls.push({
+                    id: Date.now(), empId: APP.user.id,
+                    compNo: document.getElementById('call-comp').value,
+                    date: document.getElementById('call-date').value,
+                    link: 'https://drive.google.com/mock' 
+                });
+                saveData(); renderMyCalls();
+                document.getElementById('call-comp').value = '';
+                showToast('File Uploaded');
+            }, 1500);
+        }
+
+        function renderMyCalls() {
+            const list = document.getElementById('my-call-list');
+            const my = APP.db.calls.filter(c => c.empId === APP.user.id).reverse();
+            list.innerHTML = my.map(c => `
+                <div class="list-item">
+                    <div class="list-content">
+                        <h4>${c.compNo || 'Job #' + c.id}</h4>
+                        <p>${c.date}</p>
+                    </div>
+                    <div class="flex" style="gap:5px;">
+                        <a href="${c.link}" target="_blank" class="btn btn-sm btn-ghost">View</a>
+                        <button class="btn btn-sm btn-ghost" onclick="deleteMyCall(${c.id})"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                </div>
+            `).join('') || '<div class="text-center p-4 text-muted">No reports.</div>';
+        }
+
+        function deleteMyCall(id) {
+            if(!confirm('Delete this report?')) return;
+            APP.db.calls = APP.db.calls.filter(c => c.id !== id);
+            saveData(); renderMyCalls(); showToast('Report Deleted');
+        }
+
+        function loadDriveFiles() {
+             document.getElementById('drive-browser').innerHTML = `
+                <div class="card" style="padding:16px; text-align:center; cursor:pointer;">
+                    <i class="fa-solid fa-folder" style="font-size:2.5rem; color:var(--warning);"></i>
+                    <div style="font-size:0.85rem;">Reports 2023</div>
+                </div>
+                <div class="card" style="padding:16px; text-align:center; cursor:pointer;">
+                    <i class="fa-solid fa-file-pdf" style="font-size:2.5rem; color:var(--danger);"></i>
+                    <div style="font-size:0.85rem;">Policies</div>
+                </div>
+             `;
+        }
+
+        // --- CHAT & AI ---
+        function loadChatContacts() {
+            const list = document.getElementById('contact-list');
+            const myChats = APP.db.chats.filter(c => c.participants.includes(APP.user.id));
+            if(myChats.length === 0) { list.innerHTML = '<div class="text-center p-3 text-muted">No active chats.</div>'; return; }
+
+            list.innerHTML = myChats.map(chat => {
+                const otherId = chat.participants.find(id => id !== APP.user.id);
+                const name = otherId === 'admin' ? 'Admin' : (APP.db.employees.find(e => e.id === otherId)?.name || 'Unknown');
+                const msgs = APP.db.messages.filter(m => m.chatId === chat.id);
+                const lastMsg = msgs.length ? msgs[msgs.length-1].text : 'No messages';
+                const time = msgs.length ? new Date(msgs[msgs.length-1].timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+
+                return `
+                <div class="contact-item ${APP.activeChatId === chat.id ? 'active' : ''}" onclick="openChat('${chat.id}')">
+                    <div class="avatar" style="width:36px; height:36px;">
+                        ${otherId === 'admin' ? 'A' : (APP.db.employees.find(e => e.id === otherId)?.photo ? `<img src="${APP.db.employees.find(e => e.id === otherId).photo}">` : 'U')}
+                    </div>
+                    <div class="contact-info">
+                        <div class="contact-name">${name}</div>
+                        <div class="contact-last-msg" style="display:flex; justify-content:space-between;">
+                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:60%;">${lastMsg}</span>
+                            <span style="font-size:0.65rem; opacity:0.5;">${time}</span>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        function startNewChat(targetId) {
+            const participants = [APP.user.id, targetId].sort();
             const chatId = participants.join('-');
             let chat = APP.db.chats.find(c => c.id === chatId);
-            if(!chat) {
-                chat = { id: chatId, participants: participants, createdAt: new Date().toISOString() };
-                APP.db.chats.push(chat);
-                saveData();
-            }
-            closeModal('newChatModal');
-            loadEmpChatContacts();
+            if(!chat) { chat = { id: chatId, participants: participants }; APP.db.chats.push(chat); saveData(); }
             openChat(chatId);
         }
 
-        // --- CALL LOGIC ---
-        function openCallModal() {
-            document.getElementById('call-comp-no').value = '';
-            document.getElementById('call-date').value = '';
-            document.getElementById('call-remark').value = '';
-            document.getElementById('call-drive-link').value = ''; 
-            
-            // Show Target Email
-            const email = APP.db.settings.callReportEmail || "Not Configured";
-            document.getElementById('call-modal-target-email').textContent = email;
-            
-            document.getElementById('callModal').classList.add('open');
+        function openChat(chatId) {
+            APP.activeChatId = chatId; loadChatContacts();
+            if(window.innerWidth < 768) {
+                document.querySelector('.chat-sidebar').classList.remove('mobile-visible');
+                document.querySelector('.chat-main').classList.add('mobile-visible');
+                document.getElementById('chat-back').classList.remove('hidden');
+            } else { document.getElementById('chat-back').classList.add('hidden'); }
+            const otherId = APP.db.chats.find(c => c.id === chatId).participants.find(id => id !== APP.user.id);
+            document.getElementById('chat-title').textContent = otherId === 'admin' ? 'Admin' : (APP.db.employees.find(e => e.id === otherId)?.name || 'Unknown');
+            renderMessages(chatId);
         }
 
-        function saveCallRecord() {
-            const compNo = document.getElementById('call-comp-no').value;
-            const date = document.getElementById('call-date').value;
-            const remark = document.getElementById('call-remark').value;
-            const driveLink = document.getElementById('call-drive-link').value; // Get Drive Link
-            
-            if(!compNo || !date) return showToast("Fields required", "error");
-            if(!driveLink) return showToast("Report Link is required", "error");
-            
-            APP.db.calls.push({
-                id: Date.now(),
-                empId: APP.user.id,
-                empName: APP.user.name,
-                compNo: compNo,
-                date: date,
-                remark: remark,
-                driveLink: driveLink, // Save Drive Link
-                timestamp: new Date().toISOString()
-            });
-
-            saveData();
-            renderCallList();
-            closeModal('callModal');
-            showToast("Call Report Uploaded", "success");
-        }
-
-        function renderCallList() {
-            const list = document.getElementById('call-list');
-            const myCalls = APP.db.calls.filter(c => c.empId === APP.user.id);
-            if(myCalls.length === 0) {
-                list.innerHTML = '<div class="p-3 text-center text-muted">No records found.</div>';
-                return;
+        function toggleChatView(showMain) {
+            if(showMain) {
+                document.querySelector('.chat-sidebar').classList.remove('mobile-visible');
+                document.querySelector('.chat-main').classList.add('mobile-visible');
+            } else {
+                document.querySelector('.chat-sidebar').classList.add('mobile-visible');
+                document.querySelector('.chat-main').classList.remove('mobile-visible');
+                APP.activeChatId = null; loadChatContacts();
             }
-            list.innerHTML = myCalls.map(c => `
-                <div class="list-item">
-                    <div class="list-item-content">
-                        <div>
-                            <div style="font-weight:600;">${c.compNo}</div>
-                            <div class="text-xs text-muted">${c.date} | ${c.remark}</div>
-                        </div>
-                    </div>
-                    <!-- Download Button -->
-                    <a href="${c.driveLink}" target="_blank" class="btn btn-sm btn-primary" style="background:var(--info); width: auto;">
-                        <i class="fa-solid fa-download"></i> Download
-                    </a>
-                </div>
-            `).join('');
         }
 
-        // --- DRIVE LINK LOGIC ---
-        function uploadAdminFile() {
-            closeModal('uploadModal');
-            showToast("Please enter the link in the Cloud Drive Link field.", "info");
+        function renderMessages(chatId) {
+            const container = document.getElementById('message-container');
+            const msgs = APP.db.messages.filter(m => m.chatId === chatId).sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+            if(msgs.length === 0) { container.innerHTML = '<div class="text-center" style="margin-top: 50px; color: var(--fg-muted); opacity: 0.5;">Start the conversation...</div>'; return; }
+
+            container.innerHTML = msgs.map(m => {
+                const isMe = m.senderId === APP.user.id;
+                return `
+                <div class="message-bubble ${isMe ? 'msg-sent' : 'msg-received'}">
+                    <div style="font-weight:600; font-size:0.7rem; margin-bottom:4px; color:${isMe ? 'rgba(255,255,255,0.7)' : 'var(--primary)'}">${m.category}</div>
+                    ${m.text}
+                    <span class="msg-meta">${new Date(m.timestamp).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                </div>`;
+            }).join('');
+            container.scrollTop = container.scrollHeight;
         }
 
-        function loadAdminCloudFiles() {
-            updateCloudDisplay(); 
+        function sendMessage() {
+            const input = document.getElementById('msg-input');
+            const cat = document.getElementById('msg-category').value;
+            const text = input.value.trim();
+            if(!text || !APP.activeChatId) return;
+            APP.db.messages.push({ id: Date.now(), chatId: APP.activeChatId, senderId: APP.user.id, category: cat, text: text, timestamp: new Date().toISOString() });
+            saveData(); input.value = ''; renderMessages(APP.activeChatId); loadChatContacts();
         }
 
-        // New: Toggle between G-Drive and P-Cloud
-        function toggleActiveDrive(driveType) {
-            APP.db.settings.activeDrive = driveType;
-            saveData();
-            updateCloudDisplay();
-            showToast(`Switched to ${driveType === 'gdrive' ? 'Google Drive' : 'P-Cloud'}`, "info");
-        }
+        // --- AI RESPONDER ---
+        function sendAIMessage() {
+            const input = document.getElementById('ai-input');
+            const text = input.value.trim().toLowerCase();
+            if(!text) return;
 
-        function updateCloudDisplay() {
-            const active = APP.db.settings.activeDrive || 'gdrive';
-            const link = active === 'gdrive' ? APP.db.settings.gdriveLink : APP.db.settings.pcloudLink;
-            const label = active === 'gdrive' ? 'Google Drive Link' : 'P-Cloud Link';
-            const name = active === 'gdrive' ? 'Google Drive' : 'P-Cloud';
-            
-            // Update Admin Cloud Tab
-            document.getElementById('admin-drive-link').value = link || "";
-            document.getElementById('active-drive-label').textContent = label;
-            document.getElementById('active-drive-name').textContent = name;
-            
-            // Update Employee Cloud Tab
-            document.getElementById('emp-drive-link').value = link || "";
-            document.getElementById('emp-drive-label').textContent = label;
-            document.getElementById('emp-active-drive-badge').textContent = active === 'gdrive' ? 'G-Drive' : 'P-Cloud';
-        }
+            appendAIMessage(text, 'sent');
+            input.value = '';
 
-        // --- EMPLOYEE ADVANCE & LEAVE LOGIC ---
-        function openAdvanceModal() {
-            document.getElementById('adv-amount').value = '';
-            document.getElementById('adv-reason').value = '';
-            document.getElementById('advReqModal').classList.add('open');
-        }
-
-        function submitAdvance() {
-            const amt = document.getElementById('adv-amount').value;
-            if(!amt) return showToast('Enter amount', 'error');
-            APP.db.advances.push({ id: Date.now().toString(), empId: APP.user.id, empName: APP.user.name, amount: amt, reason: document.getElementById('adv-reason').value, date: new Date().toISOString().split('T')[0], status: 'Pending' });
-            saveData();
-            closeModal('advReqModal');
-            showMyAdvances();
-            showToast('Request Sent', 'success');
-        }
-
-        function openLeaveModal() {
-            document.getElementById('leave-type').value = 'Sick Leave';
-            document.getElementById('leave-start').value = '';
-            document.getElementById('leave-end').value = '';
-            document.getElementById('leaveReqModal').classList.add('open');
-        }
-
-        function submitLeave() {
-            const type = document.getElementById('leave-type').value;
-            const start = document.getElementById('leave-start').value;
-            const end = document.getElementById('leave-end').value;
-            if(!start || !end) { showToast('Please select dates', 'error'); return; }
-            APP.db.leaves.push({ id: Date.now().toString(), empId: APP.user.id, empName: APP.user.name, type: type, start: start, end: end, dateApplied: new Date().toISOString().split('T')[0], status: 'Pending' });
-            saveData();
-            closeModal('leaveReqModal');
-            showMyLeaves();
-            showToast('Leave Request Sent', 'success');
-        }
-
-        function showMyAdvances() {
-            const list = document.getElementById('my-advance-list');
-            const mine = APP.db.advances.filter(a => a.empId === APP.user.id).reverse();
-            list.innerHTML = mine.map(a => `<div class="list-item" style="padding: 8px 12px;"><div class="flex justify-between w-full"><span>Rs. ${a.amount}</span><span class="badge ${a.status.toLowerCase()}">${a.status}</span></div><div class="text-xs text-muted">${a.date}</div></div>`).join('');
-        }
-
-        function showMyLeaves() {
-            const list = document.getElementById('my-leave-list');
-            const mine = APP.db.leaves.filter(l => l.empId === APP.user.id).reverse();
-            list.innerHTML = mine.map(l => `<div class="list-item" style="padding: 8px 12px;"><div class="flex justify-between w-full"><span>${l.type}</span><span class="badge ${l.status.toLowerCase()}">${a.status}</span></div><div class="text-xs text-muted">${l.start} to ${l.end}</div></div>`).join('');
-        }
-
-        // --- ADMIN UI HELPERS ---
-        function renderAdminDashboard() {
-            document.getElementById('stat-total').textContent = APP.db.employees.length;
-            document.getElementById('stat-online').textContent = Math.floor(APP.db.employees.length * 0.7);
-            document.getElementById('stat-adv').textContent = APP.db.advances.filter(a => a.status === 'Pending').length;
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('stat-checkins').textContent = APP.db.attendance.filter(a => a.date === today).length;
-            renderSecurityLog();
-        }
-
-        function renderSecurityLog() {
-            const tbody = document.getElementById('security-log-body');
-            tbody.innerHTML = APP.db.logs.slice(0, 5).map(l => `<tr><td>${l.user}</td><td class="text-xs text-muted">${l.device}</td><td class="code-font">${l.ip}</td><td class="text-xs">${l.time.split(',')[1]}</td></tr>`).join('') || '<tr><td colspan="4" class="text-center text-muted">No logs yet</td></tr>';
-        }
-
-        function initMap() {
-            if (APP.map) { APP.map.invalidateSize(); return; }
-            const mapContainer = document.getElementById('map-container');
-            if(!mapContainer || mapContainer.offsetParent === null) return;
-            APP.map = L.map('map-container').setView([20.5937, 78.9629], 5); 
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(APP.map);
-            const today = new Date().toISOString().split('T')[0];
-            let markerCount = 0;
-            APP.db.employees.forEach(emp => {
-                const lastAtt = APP.db.attendance.find(a => a.empId === emp.id && a.date === today);
-                if(lastAtt && lastAtt.lat) { 
-                    L.marker([lastAtt.lat, lastAtt.lng]).addTo(APP.map).bindPopup(`<b>${emp.name}</b><br>Checked In: ${lastAtt.in}`); 
-                    markerCount++;
+            setTimeout(() => {
+                let reply = "I didn't understand that. Try asking about 'Attendance', 'Leave', or 'Admin'.";
+                if(text.includes('check in') || text.includes('attendance')) reply = "To check in, go to the Home tab and tap the 'Check In' button. Ensure your GPS is on.";
+                else if(text.includes('leave') || text.includes('holiday')) reply = "To apply for leave, go to Quick Actions > Leave. Select your dates and submit.";
+                else if(text.includes('admin') || text.includes('help') || text.includes('support')) {
+                    reply = "I am connecting you to the Admin now...";
+                    startNewChat('admin');
+                    switchEmpTab('chat');
                 }
+                else if(text.includes('hello') || text.includes('hi')) reply = "Hello! How can I assist you with Nexus HR today?";
+                
+                appendAIMessage(reply, 'received');
+            }, 600);
+        }
+
+        function appendAIMessage(text, type) {
+            const container = document.getElementById('ai-message-container');
+            const div = document.createElement('div');
+            div.className = `message-bubble ${type === 'sent' ? 'msg-sent' : 'msg-received ai-bubble'}`;
+            div.innerHTML = text;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // --- GOOGLE CALENDAR ---
+        function generateCalendarEvent() {
+            const title = encodeURIComponent("Nexus HR Check-in");
+            const details = encodeURIComponent("Daily Attendance Check-in Reminder");
+            const location = encodeURIComponent("Office / Remote");
+            const tomorrow = new Date();
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            tomorrow.setHours(9,0,0);
+            const start = tomorrow.toISOString().replace(/-|:|\.\d\d\d/g, "");
+            const end = new Date(tomorrow.getTime() + 10*60000).toISOString().replace(/-|:|\.\d\d\d/g, "");
+
+            window.open(`https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}&location=${location}&sf=true&output=xml`, '_blank');
+        }
+
+        // --- MAP ---
+        function initMap() {
+            if(!document.getElementById('map-container')) return;
+            if(APP.map) { APP.map.invalidateSize(); APP.map.eachLayer(l => { if(!!l.toGeoJSON) APP.map.removeLayer(l); }); } 
+            else { APP.map = L.map('map-container').setView([20.5937, 78.9629], 5); L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(APP.map); }
+            
+            const today = new Date().toISOString().split('T')[0];
+            APP.db.attendance.filter(a => a.date === today && a.lat).forEach(a => {
+                L.marker([a.lat, a.lng]).addTo(APP.map).bindPopup(`<b>${a.empName}</b><br>${a.inTime}`);
             });
-            if(markerCount === 0) {
-                APP.db.employees.forEach(emp => {
-                   if(emp.companyId) L.marker([20.5937 + (Math.random()-0.5)*5, 78.9629 + (Math.random()-0.5)*5]).addTo(APP.map).bindPopup(`<b>${emp.name}</b><br><span style="color:#888">Location Estimate</span>`);
-                });
-            }
         }
 
         // --- UTILS ---
@@ -1208,115 +1751,37 @@
             }, 1000);
         }
 
-        function switchAdminTab(tab, btn) {
-            document.querySelectorAll('#admin-nav .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.querySelectorAll('#admin-panel > div').forEach(d => d.classList.add('hidden'));
-            document.getElementById(`admin-view-${tab}`).classList.remove('hidden');
-            if(tab === 'dashboard') setTimeout(initMap, 100);
-            if(tab === 'cloud') updateCloudDisplay();
-        }
-
-        function switchEmpTab(tab, btn) {
-            document.querySelectorAll('#emp-nav .tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.querySelectorAll('#employee-panel > div').forEach(d => d.classList.add('hidden'));
-            document.getElementById(`emp-view-${tab}`).classList.remove('hidden');
-            if(tab === 'call') renderCallList();
-            if(tab === 'chat') loadEmpChatContacts();
-            if(tab === 'cloud') updateCloudDisplay(); // Syncs the drive link
-        }
-
+        function openModal(id) { document.getElementById(id).classList.add('open'); }
         function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+        
         function showToast(msg, type='success') {
+            const c = document.getElementById('toast-container');
             const t = document.createElement('div');
-            t.className = `toast ${type}`;
-            t.innerHTML = type === 'success' ? `<i class="fa-solid fa-check-circle"></i> ${msg}` : `<i class="fa-solid fa-circle-info"></i> ${msg}`;
-            document.getElementById('toast-box').appendChild(t);
-            setTimeout(() => t.remove(), 3000);
+            t.className = `toast`;
+            t.style.borderLeftColor = type === 'error' ? 'var(--danger)' : (type === 'info' ? 'var(--primary)' : 'var(--success)');
+            t.innerHTML = `<i class="fa-solid fa-${type === 'error' ? 'circle-exclamation' : 'circle-check'}"></i> ${msg}`;
+            c.appendChild(t);
+            if(type === 'success') playNotificationSound();
+            setTimeout(() => t.remove(), 4000);
         }
-        function saveGlobalSettings() {
-            // Save WA Settings
-            APP.db.settings.waToken = document.getElementById('cfg-wa-token').value;
-            APP.db.settings.waInstanceId = document.getElementById('cfg-wa-instance').value;
-            APP.db.settings.waCheckInGroup = document.getElementById('cfg-wa-checkin-group').value;
-            APP.db.settings.waBirthdayGroup = document.getElementById('cfg-wa-birthday-group').value;
-            APP.db.settings.checkInTime = document.getElementById('cfg-checkin-time').value;
-            
-            // Save Cloud Settings
-            APP.db.settings.gdriveLink = document.getElementById('cfg-gdrive-link').value;
-            APP.db.settings.pcloudLink = document.getElementById('cfg-pcloud-link').value;
-            APP.db.settings.activeDrive = document.getElementById('cfg-active-drive').value;
-            
-            updateCloudDisplay();
-            saveData();
-            showToast("All Settings Saved Permanently");
+
+        function showNotification(msg, type='info') {
+            if("Notification" in window && Notification.permission === "granted") new Notification("Nexus HR", { body: msg });
+            showToast(msg, type);
         }
-        function saveCallReportSettings() {
-             APP.db.settings.callReportEmail = document.getElementById('cfg-call-report-email').value;
-             APP.db.settings.callReportDest = document.getElementById('cfg-call-report-dest').value;
-             saveData();
-             showToast("Call Report Settings Saved");
+
+        function requestBgPermission() { if("Notification" in window && Notification.permission !== "granted") Notification.requestPermission(); }
+
+        function playNotificationSound() {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain); gain.connect(ctx.destination);
+            osc.type = 'sine'; osc.frequency.value = 523.25; 
+            gain.gain.setValueAtTime(0.1, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.00001, ctx.currentTime + 0.5);
+            osc.start(); osc.stop(ctx.currentTime + 0.5);
         }
-        function renderUI() {
-            if(APP.user && APP.user.role === 'admin') renderAdminDashboard();
-            if(APP.user && APP.user.role !== 'admin') renderEmployeeDashboard();
-        }
-        function renderEmployeeDashboard() {
-            document.getElementById('emp-dash-name').textContent = APP.user.name;
-            document.getElementById('emp-dash-role').textContent = APP.user.id;
-            showMyAdvances();
-            showMyLeaves();
-        }
-        function logout() { location.reload(); }
-        function openUploadModal(role) { document.getElementById('uploadModal').classList.add('open'); }
-        function openStatModal(t) { alert("Stat: "+t); }
-        function handleChatInputKey(e) { if(e.key === 'Enter') sendEmpMessage(); }
-        function toggleEmpChatView(show) { 
-             if(show) document.getElementById('emp-chat-main').classList.add('mobile-visible');
-             else document.getElementById('emp-chat-main').classList.remove('mobile-visible');
-        }
-        function performCheckIn() { showToast("Checked In"); }
-        function performCheckOut() { showToast("Checked Out"); }
-        function escapeHtml(text) { 
-            const map = {'&': '&amp;', '<': '&lt;', '>': '&gt;'}; 
-            return text.replace(/[&<>"']/g, m => map[m]); 
-        }
-        function toggleLocalMode(c) { APP.isLocalMode = c.checked; document.body.classList.toggle('local-mode'); }
-        function manualSync() { loadData(); }
-        function loadSettings() { 
-             // Load inputs with DB values
-             document.getElementById('cfg-wa-token').value = APP.db.settings.waToken || "";
-             document.getElementById('cfg-wa-instance').value = APP.db.settings.waInstanceId || "";
-             document.getElementById('cfg-wa-checkin-group').value = APP.db.settings.waCheckInGroup || "";
-             document.getElementById('cfg-wa-birthday-group').value = APP.db.settings.waBirthdayGroup || "";
-             document.getElementById('cfg-checkin-time').value = APP.db.settings.checkInTime || "09:30";
-             
-             document.getElementById('cfg-gdrive-link').value = APP.db.settings.gdriveLink || "";
-             document.getElementById('cfg-pcloud-link').value = APP.db.settings.pcloudLink || "";
-             document.getElementById('cfg-active-drive').value = APP.db.settings.activeDrive || "gdrive";
-             
-             // Call Report Settings
-             document.getElementById('cfg-call-report-email').value = APP.db.settings.callReportEmail || "";
-             document.getElementById('cfg-call-report-dest').value = APP.db.settings.callReportDest || "gdrive";
-             
-             // Initialize Display
-             updateCloudDisplay();
-        }
-        function openAdminProfileModal() { alert("Profile Modal"); }
-        function openEmpModal() { alert("Employee Modal"); }
-        function openMsgModal() { alert("Message Modal"); }
-        function generateReport() { alert("Report Generated"); }
-        function toggleReportDateInput() {}
-        function downloadReportPDF() { alert("PDF Downloaded"); }
-        function shareReport() { alert("Shared"); }
-        function openChatOptions() { alert("Chat Options"); }
-        function saveCloudSettings() { showToast("Saved"); }
-        function renderTeamList() {} 
-        function renderAdvanceListAdmin() {} 
-        function renderAdminLeaves() {}
-        function renderCompanyList() {}
-        function loadSettingsUI() {}
     </script>
 </body>
 </html>
