@@ -210,7 +210,7 @@
     <header>
         <div class="brand">
             <div class="brand-icon"><i class="fa-solid fa-cube"></i></div>
-            <div>Nexus HR <span style="font-size:0.7em; color:var(--primary); font-weight:400;" id="version-display">v2.0</span></div>
+            <div>Nexus HR <span style="font-size:0.7em; color:var(--primary); font-weight:400;" id="version-display">v2.1</span></div>
         </div>
         <div style="display:flex; gap:10px; align-items: center;">
             <div id="cloud-status" class="badge online" onclick="manualSync()">Local</div>
@@ -229,14 +229,14 @@
             
             <form onsubmit="handleLogin(event)">
                 <div class="input-group">
-                    <input type="text" id="username" placeholder="User ID" required style="text-align: center; font-size: 1.1rem;">
+                    <input type="text" id="username" placeholder="User ID (admin)" required style="text-align: center; font-size: 1.1rem;">
                 </div>
                 <div class="input-group">
-                    <input type="password" id="password" placeholder="Password" required style="text-align: center; font-size: 1.1rem;">
+                    <input type="password" id="password" placeholder="Password (admin)" required style="text-align: center; font-size: 1.1rem;">
                 </div>
                 <button type="submit" class="btn btn-primary" style="height: 54px; font-size: 1rem; border-radius: 30px;">Authenticate</button>
             </form>
-            <p class="mt-4" style="font-size: 0.8rem; color: var(--fg-muted);">Contact Administrator for credentials.</p>
+            <p class="mt-4" style="font-size: 0.8rem; color: var(--fg-muted);">Default: admin / admin</p>
         </div>
     </section>
 
@@ -300,7 +300,6 @@
         <div id="view-manager" class="hidden">
             <div class="card">
                 <h2>Attendance Manager <span class="badge pending">Backdated Entry</span></h2>
-                
                 <!-- TABS -->
                 <div class="flex" style="gap:10px; margin-bottom:20px;">
                     <button class="btn btn-sm btn-primary" onclick="switchMgrTab('single')">Single Entry</button>
@@ -310,10 +309,7 @@
 
                 <!-- SINGLE ENTRY -->
                 <div id="mgr-tab-single">
-                    <div class="input-group">
-                        <label>Select Employee</label>
-                        <select id="adm-mgr-emp"></select>
-                    </div>
+                    <div class="input-group"><label>Select Employee</label><select id="adm-mgr-emp"></select></div>
                     <div class="grid grid-2">
                         <div class="input-group"><label>Date</label><input type="date" id="adm-mgr-date"></div>
                         <div class="input-group">
@@ -360,7 +356,7 @@
             </div>
         </div>
 
-        <!-- NEW: BROADCAST MESSAGING -->
+        <!-- NEW: BROADCAST MESSAGING (UPDATED) -->
         <div id="view-broadcast" class="hidden">
             <div class="card">
                 <h2>Broadcast Message</h2>
@@ -376,11 +372,20 @@
                     <label>Select Recipients</label>
                     <select id="bc-target">
                         <option value="all">All Employees</option>
-                        <!-- Populated via JS -->
                     </select>
                 </div>
                 <div class="input-group"><label>Message Content</label><textarea id="bc-msg" rows="4" placeholder="Type your message here..."></textarea></div>
-                <button class="btn btn-accent" onclick="sendBroadcast()"><i class="fa-solid fa-paper-plane"></i> Send Broadcast</button>
+                
+                <!-- EXTERNAL SHARE -->
+                <div style="margin-top: 16px; padding-top:16px; border-top: 1px solid var(--border);">
+                    <label style="font-size: 0.8rem; color: var(--fg-muted);">Send via External App</label>
+                    <div class="flex" style="gap:10px; margin-top:8px;">
+                        <button class="btn btn-success" onclick="broadcastToApp('whatsapp')"><i class="fa-brands fa-whatsapp"></i> WhatsApp Group</button>
+                        <button class="btn btn-ghost" onclick="broadcastToApp('telegram')"><i class="fa-brands fa-telegram"></i> Telegram</button>
+                    </div>
+                </div>
+                
+                <button class="btn btn-accent mt-4" onclick="sendBroadcast()"><i class="fa-solid fa-paper-plane"></i> Send In-App Broadcast</button>
             </div>
         </div>
 
@@ -434,7 +439,7 @@
                 <div class="flex" style="justify-content: space-between; align-items: center; margin-bottom: 20px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
                     <div>
                         <h3 style="margin:0; color:white;">App Version</h3>
-                        <p style="font-size:0.8rem; margin:0;">Current: <span id="setting-ver">v2.0</span> | Latest: <span id="setting-latest">v2.0</span></p>
+                        <p style="font-size:0.8rem; margin:0;">Current: <span id="setting-ver">v2.1</span> | Latest: <span id="setting-latest">v2.1</span></p>
                     </div>
                     <button class="btn btn-sm btn-primary" onclick="checkForUpdates()"><i class="fa-solid fa-rotate"></i> Check Update</button>
                 </div>
@@ -456,8 +461,14 @@
 
                 <div style="height: 1px; background: var(--border); margin: 32px 0;"></div>
 
+                <h3 style="color: var(--accent);">ImgBB Integration (Photo Upload)</h3>
+                <div class="input-group"><label>ImgBB API Key</label><input type="password" id="cfg-imgbb" placeholder="Enter API Key here..."></div>
+                <p class="text-sm text-muted">Used for Employee and Admin profile photo uploads.</p>
+
+                <div style="height: 1px; background: var(--border); margin: 32px 0;"></div>
+
                 <h3 style="color: var(--success);">WhatsApp Automation</h3>
-                <div class="input-group"><label>Check-in Group Link</label><input type="text" id="cfg-wa-checkin" placeholder="https://chat.whatsapp.com/..."></div>
+                <div class="input-group"><label>Default Group Link</label><input type="text" id="cfg-wa-checkin" placeholder="https://chat.whatsapp.com/..."></div>
                 <div class="input-group"><label>Birthday Group Link</label><input type="text" id="cfg-wa-bday" placeholder="https://chat.whatsapp.com/..."></div>
                 <div class="flex" style="gap:10px; margin-bottom: 20px;">
                     <button class="btn btn-sm btn-success" onclick="testWA('checkin')">Test Check-in Msg</button>
@@ -483,7 +494,13 @@
                 </div>
                 <div class="input-group"><label>Admin Name</label><input type="text" id="cfg-admin-name"></div>
                 <div class="input-group"><label>Admin Password</label><input type="password" id="cfg-admin-pass" placeholder="New Password"></div>
-                <div class="input-group"><label>Profile Photo URL</label><input type="text" id="cfg-admin-photo" placeholder="https://i.ibb.co/..."></div>
+                <div class="input-group"><label>Profile Photo</label>
+                    <div class="flex" style="gap:10px;">
+                        <input type="text" id="cfg-admin-photo" placeholder="https://i.ibb.co/..." readonly>
+                        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('admin-photo-upload').click()"><i class="fa-solid fa-upload"></i> Upload</button>
+                        <input type="file" id="admin-photo-upload" style="display:none;" accept="image/*" onchange="uploadToImgBB(this, 'admin')">
+                    </div>
+                </div>
                 <button class="btn btn-primary" onclick="saveAdminProfile()">Update Profile</button>
             </div>
         </div>
@@ -585,7 +602,14 @@
                         </select>
                     </div>
                 </div>
-                <div class="input-group"><label>Photo URL (ImgBB)</label><input type="text" id="edit-emp-photo" placeholder="https://i.ibb.co/..."></div>
+                <div class="input-group">
+                    <label>Profile Photo</label>
+                    <div class="flex" style="gap:5px;">
+                        <input type="text" id="edit-emp-photo" placeholder="URL will appear here..." readonly>
+                        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('emp-photo-upload').click()"><i class="fa-solid fa-upload"></i> Upload</button>
+                        <input type="file" id="emp-photo-upload" style="display:none;" accept="image/*" onchange="uploadToImgBB(this, 'employee')">
+                    </div>
+                </div>
                 <div class="input-group"><label>New Password</label><input type="password" id="edit-emp-pass" placeholder="Leave blank to keep current"></div>
                 <button class="btn btn-primary" onclick="saveEmployeeProfile()">Save Changes</button>
             </div>
@@ -611,7 +635,7 @@
             </div>
         </div>
 
-        <!-- Chat -->
+        <!-- Chat (UPDATED) -->
         <div id="emp-view-chat" class="hidden">
             <div class="card" style="padding: 0; height: calc(100vh - 180px); overflow: hidden;">
                 <div class="chat-layout">
@@ -627,6 +651,14 @@
                             <div class="flex items-center gap-2">
                                 <button class="btn btn-sm btn-ghost hidden" id="chat-back" onclick="toggleChatView(false)" style="width:30px; padding:0;"><i class="fa-solid fa-arrow-left"></i></button>
                                 <div id="chat-title" style="font-size: 0.95rem;">Select a chat</div>
+                            </div>
+                            <!-- Chat Actions (Share) -->
+                            <div id="chat-actions" class="hidden">
+                                <div class="flex" style="gap:5px;">
+                                    <button class="btn btn-sm btn-success btn-icon" title="Share via WhatsApp" onclick="shareChatViaApp('whatsapp')"><i class="fa-brands fa-whatsapp"></i></button>
+                                    <button class="btn btn-sm btn-ghost btn-icon" title="Share via Telegram" onclick="shareChatViaApp('telegram')"><i class="fa-brands fa-telegram"></i></button>
+                                    <button class="btn btn-sm btn-ghost btn-icon" title="Share via System" onclick="shareChatViaApp('native')"><i class="fa-solid fa-share-nodes"></i></button>
+                                </div>
                             </div>
                         </div>
                         <div class="chat-messages" id="message-container">
@@ -732,7 +764,14 @@
                 <div class="input-group"><label>Phone</label><input type="text" id="new-emp-phone"></div>
                 <div class="input-group"><label>Birthday</label><input type="date" id="new-emp-dob"></div>
             </div>
-            <div class="input-group"><label>Photo URL</label><input type="text" id="new-emp-photo" placeholder="https://i.ibb.co/..."></div>
+            <div class="input-group">
+                <label>Profile Photo</label>
+                <div class="flex" style="gap:5px;">
+                    <input type="text" id="new-emp-photo" placeholder="Upload or paste URL..." readonly>
+                    <button class="btn btn-sm btn-ghost" onclick="document.getElementById('new-emp-photo-upload').click()"><i class="fa-solid fa-upload"></i> Upload</button>
+                    <input type="file" id="new-emp-photo-upload" style="display:none;" accept="image/*" onchange="uploadToImgBB(this, 'new-employee')">
+                </div>
+            </div>
             <div class="input-group"><label>Company</label><select id="new-emp-comp"></select></div>
             <div class="flex" style="justify-content: flex-end; gap:10px; margin-top:20px;">
                 <button class="btn btn-ghost" onclick="closeModal('empModal')">Cancel</button>
@@ -761,6 +800,14 @@
             <div class="grid grid-2">
                 <div class="input-group"><label>Phone</label><input type="text" id="admin-edit-emp-phone"></div>
                 <div class="input-group"><label>Birthday</label><input type="date" id="admin-edit-emp-dob"></div>
+            </div>
+            <div class="input-group">
+                <label>Profile Photo</label>
+                <div class="flex" style="gap:5px;">
+                    <input type="text" id="admin-edit-emp-photo" placeholder="Upload or paste URL..." readonly>
+                    <button class="btn btn-sm btn-ghost" onclick="document.getElementById('admin-edit-emp-photo-upload').click()"><i class="fa-solid fa-upload"></i> Upload</button>
+                    <input type="file" id="admin-edit-emp-photo-upload" style="display:none;" accept="image/*" onchange="uploadToImgBB(this, 'edit-employee')">
+                </div>
             </div>
             <div class="input-group"><label>Company</label><select id="admin-edit-emp-comp"></select></div>
             <div class="flex" style="justify-content: flex-end; gap:10px; margin-top:20px;">
@@ -836,6 +883,10 @@
             if(local) APP.db = JSON.parse(local);
             else APP.db = JSON.parse(JSON.stringify(DEFAULT_DB));
 
+            // Ensure Admin credentials are default at load
+            APP.db.admin.id = 'admin';
+            APP.db.admin.pass = 'admin';
+
             if(APP.db.settings.binId && APP.db.settings.masterKey) {
                 syncFromCloud();
             } else {
@@ -899,6 +950,51 @@
             reader.readAsText(file);
         }
 
+        // --- IMGBB UPLOAD LOGIC ---
+        function uploadToImgBB(input, target) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!APP.db.settings.imgbb) {
+                alert("Please configure the ImgBB API Key in Settings first.");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', file);
+
+            showToast('Uploading Image...', 'info');
+
+            fetch('https://api.imgbb.com/1/upload?key=' + APP.db.settings.imgbb, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    const url = data.data.url;
+                    showToast('Image Uploaded Successfully', 'success');
+                    
+                    if(target === 'admin') {
+                        document.getElementById('cfg-admin-photo').value = url;
+                    } else if (target === 'employee') {
+                        document.getElementById('edit-emp-photo').value = url;
+                        document.getElementById('edit-emp-avatar-preview').innerHTML = `<img src="${url}" style="width:100%; height:100%; object-fit:cover;">`;
+                    } else if (target === 'new-employee') {
+                        document.getElementById('new-emp-photo').value = url;
+                    } else if (target === 'edit-employee') {
+                        document.getElementById('admin-edit-emp-photo').value = url;
+                    }
+                } else {
+                    showToast('Upload Failed', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showToast('Upload Error', 'error');
+            });
+        }
+
         // --- ADMIN DEVICE DETECTION ---
         function detectAdminDevice() {
             const isSuperAdminDevice = localStorage.getItem('nexus_super_device') === 'true';
@@ -919,12 +1015,12 @@
             const u = document.getElementById('username').value;
             const p = document.getElementById('password').value;
 
-            if(u === APP.db.admin.id && p === APP.db.admin.pass) {
+            // Force check against default admin credentials for safety
+            if(u === 'admin' && p === 'admin') {
                 postLogin('admin', APP.db.admin);
             } else {
                 const emp = APP.db.employees.find(x => x.id === u && x.pass === p);
                 if(emp) {
-                    // Check Email match with device (Simulation)
                     if(emp.email && emp.email.includes('@')) {
                         console.log("Email Verified logic placeholder.");
                     }
@@ -1083,12 +1179,13 @@
             if(!emp) return;
             document.getElementById('edit-emp-hidden-id').value = id;
             document.getElementById('admin-edit-emp-name').value = emp.name;
-            document.getElementById('admin-edit-emp-pass').value = ''; // Don't show pass
+            document.getElementById('admin-edit-emp-pass').value = ''; 
             document.getElementById('admin-edit-emp-email').value = emp.email || '';
             document.getElementById('admin-edit-emp-email-type').value = emp.emailType || 'Official';
             document.getElementById('admin-edit-emp-comp').value = emp.comp || '';
             document.getElementById('admin-edit-emp-phone').value = emp.phone || '';
             document.getElementById('admin-edit-emp-dob').value = emp.dob || '';
+            document.getElementById('admin-edit-emp-photo').value = emp.photo || '';
             openModal('editEmpModal');
         }
 
@@ -1102,6 +1199,7 @@
                 emp.email = document.getElementById('admin-edit-emp-email').value;
                 emp.emailType = document.getElementById('admin-edit-emp-email-type').value;
                 emp.dob = document.getElementById('admin-edit-emp-dob').value;
+                emp.photo = document.getElementById('admin-edit-emp-photo').value;
                 const newPass = document.getElementById('admin-edit-emp-pass').value;
                 if(newPass) emp.pass = newPass;
                 saveData(); closeModal('editEmpModal'); renderTeam(); showToast('Employee Updated');
@@ -1131,14 +1229,12 @@
             const req = APP.db.requests.find(r => r.id === id);
             if(req) { 
                 req.status = status; 
-                // Auto-email simulation
                 if(status === 'Approved') sendAutoEmail(req);
                 saveData(); renderPending(); showToast(`Request ${status}`); 
             }
         }
 
         function sendAutoEmail(req) {
-            // Mock Email Sending Logic based on settings
             if(req.type === 'Leave' && APP.db.settings.leaveTo) {
                 console.log(`Sending Leave Email to ${APP.db.settings.leaveTo}`);
                 showToast(`Email notification sent to ${APP.db.settings.leaveTo}`);
@@ -1151,7 +1247,7 @@
             saveData(); renderPending(); showToast('Request Deleted');
         }
 
-        // --- BROADCAST MESSAGING ---
+        // --- BROADCAST MESSAGING (UPDATED) ---
         function loadBroadcastRecipients() {
             const select = document.getElementById('bc-target');
             select.innerHTML = '<option value="all">All Employees</option>' + 
@@ -1173,7 +1269,6 @@
             }
 
             recipients.forEach(empId => {
-                // Create a chat or add message
                 const participants = ['admin', empId].sort();
                 const chatId = participants.join('-');
                 let chat = APP.db.chats.find(c => c.id === chatId);
@@ -1192,6 +1287,23 @@
             saveData();
             document.getElementById('bc-msg').value = '';
             showToast('Broadcast Sent Successfully');
+        }
+
+        function broadcastToApp(app) {
+            const msg = document.getElementById('bc-msg').value;
+            const link = app === 'whatsapp' ? APP.db.settings.waCheckin : ''; 
+            if(!msg) return showToast('Message is empty', 'error');
+            
+            let url = "";
+            const text = `${document.getElementById('bc-type').value}: ${msg}`;
+            
+            if(app === 'whatsapp') {
+                url = link ? `${link}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
+            } else if(app === 'telegram') {
+                url = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
+            }
+            
+            window.open(url, '_blank');
         }
 
         // --- ATTENDANCE MANAGER (ADMIN) ---
@@ -1354,6 +1466,7 @@
             const s = APP.db.settings;
             document.getElementById('cfg-master-key').value = s.masterKey;
             document.getElementById('cfg-bin-id').value = s.binId;
+            document.getElementById('cfg-imgbb').value = s.imgbb || '';
             
             document.getElementById('cfg-wa-checkin').value = s.waCheckin;
             document.getElementById('cfg-wa-bday').value = s.waBday;
@@ -1374,6 +1487,7 @@
         function saveCloudSettings() {
             APP.db.settings.masterKey = document.getElementById('cfg-master-key').value;
             APP.db.settings.binId = document.getElementById('cfg-bin-id').value;
+            APP.db.settings.imgbb = document.getElementById('cfg-imgbb').value;
             saveData(); showToast('Settings Saved'); syncFromCloud();
         }
 
@@ -1408,9 +1522,8 @@
         }
 
         function checkForUpdates() {
-            // Simulation
-            document.getElementById('setting-latest').textContent = 'v2.1';
-            showToast('A new version (v2.1) is available!', 'info');
+            document.getElementById('setting-latest').textContent = 'v2.2';
+            showToast('A new version (v2.2) is available!', 'info');
         }
 
         // --- EMPLOYEE LOGIC ---
@@ -1595,7 +1708,7 @@
              `;
         }
 
-        // --- CHAT & AI ---
+        // --- CHAT & AI (UPDATED) ---
         function loadChatContacts() {
             const list = document.getElementById('contact-list');
             const myChats = APP.db.chats.filter(c => c.participants.includes(APP.user.id));
@@ -1641,6 +1754,7 @@
             } else { document.getElementById('chat-back').classList.add('hidden'); }
             const otherId = APP.db.chats.find(c => c.id === chatId).participants.find(id => id !== APP.user.id);
             document.getElementById('chat-title').textContent = otherId === 'admin' ? 'Admin' : (APP.db.employees.find(e => e.id === otherId)?.name || 'Unknown');
+            document.getElementById('chat-actions').classList.remove('hidden'); // Show share buttons
             renderMessages(chatId);
         }
 
@@ -1679,6 +1793,29 @@
             if(!text || !APP.activeChatId) return;
             APP.db.messages.push({ id: Date.now(), chatId: APP.activeChatId, senderId: APP.user.id, category: cat, text: text, timestamp: new Date().toISOString() });
             saveData(); input.value = ''; renderMessages(APP.activeChatId); loadChatContacts();
+        }
+
+        // NEW: SHARE CHAT VIA APP
+        function shareChatViaApp(app) {
+            const msgs = APP.db.messages.filter(m => m.chatId === APP.activeChatId);
+            const lastMsg = msgs.length ? msgs[msgs.length-1].text : "Conversation started";
+            
+            let url = "";
+            const text = `Message from Nexus HR: ${lastMsg}`;
+            
+            if(app === 'whatsapp') {
+                const link = APP.db.settings.waCheckin; 
+                url = link ? `${link}?text=${encodeURIComponent(text)}` : `https://wa.me/?text=${encodeURIComponent(text)}`;
+            } else if(app === 'telegram') {
+                url = `https://t.me/share/url?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(text)}`;
+            } else if(app === 'native') {
+                if(navigator.share) {
+                    navigator.share({ title: 'Nexus HR Message', text: text });
+                    return;
+                }
+            }
+            
+            window.open(url, '_blank');
         }
 
         // --- AI RESPONDER ---
